@@ -1,0 +1,27 @@
+# Python / Django
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+db.sqlite3
+/media/
+staticfiles/
+*.log
+
+# Environment / secrets
+.venv/
+venv/
+env/
+ENV/
+*.env
+.env
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Bytecode caches anywhere
+**/__pycache__/
+EOF
