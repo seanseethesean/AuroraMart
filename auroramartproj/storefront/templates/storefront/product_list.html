@@ -1,0 +1,13 @@
+<h1>Products</h1>
+<ul>
+  {% for p in products %}
+    <li>
+      <a href="{% url 'storefront:product_detail' p.pk %}">{{ p.name }}</a>
+      – {{ p.category.name }} – ${{ p.price }} – Stock: {{ p.stock }}
+      <a href="{% url 'storefront:cart_add' p.pk %}">Add</a>
+    </li>
+  {% empty %}
+    <li>No products yet.</li>
+  {% endfor %}
+</ul>
+<a href="{% url 'storefront:cart_view' %}">View cart</a>

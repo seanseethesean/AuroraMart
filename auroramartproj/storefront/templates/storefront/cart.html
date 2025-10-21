@@ -1,0 +1,18 @@
+<h1>Your Cart</h1>
+<table>
+  <tr><th>Product</th><th>Qty</th><th>Subtotal</th><th></th></tr>
+  {% for it in items %}
+    <tr>
+      <td>{{ it.product.name }}</td>
+      <td>{{ it.qty }}</td>
+      <td>${{ it.subtotal }}</td>
+      <td><a href="{% url 'storefront:cart_remove' it.product.pk %}">Remove</a></td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="4">Empty.</td></tr>
+  {% endfor %}
+</table>
+<p>Total: ${{ total }}</p>
+{% if items|length %}
+  <a href="{% url 'storefront:checkout' %}">Checkout</a>
+{% endif %}

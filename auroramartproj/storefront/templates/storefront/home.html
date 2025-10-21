@@ -1,0 +1,304 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AuroraMart — Shop smart, every day</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --fg: #0b1220;
+        --text: #0b1020;
+        --muted: #5b657a;
+        --card: #ffffff;
+        --accent: #2563eb;
+        --accent-2: #1e40af;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter,
+          Helvetica, Arial, sans-serif;
+        background: #f6f7fb;
+        color: #101827;
+      }
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      /* Hero */
+      .hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #e8f0ff, #ffffff);
+      }
+      .hero-inner {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 24px;
+        align-items: center;
+        padding: 48px;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 12px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        color: #0f172a;
+        margin-bottom: 10px;
+      }
+      .title {
+        font-size: 40px;
+        line-height: 1.1;
+        margin: 6px 0 10px 0;
+      }
+      .subtitle {
+        color: #475569;
+        font-size: 16px;
+        margin-bottom: 24px;
+      }
+      .cta {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-block;
+        padding: 12px 18px;
+        border-radius: 10px;
+        font-weight: 600;
+        border: 1px solid #cfd7e3;
+        background: #fff;
+      }
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .btn.primary:hover {
+        background: var(--accent-2);
+        border-color: var(--accent-2);
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+      .hero-graphic {
+        height: 280px;
+        border-radius: 12px;
+        background: radial-gradient(
+            140px 140px at 85% 30%,
+            #c7d2fe 0,
+            transparent 60%
+          ),
+          radial-gradient(180px 180px at 15% 80%, #bae6fd 0, transparent 60%),
+          linear-gradient(135deg, #eff6ff, #ffffff);
+        border: 1px solid #e5eaf1;
+      }
+      /* Quick search */
+      .search {
+        margin-top: 20px;
+        display: flex;
+        gap: 8px;
+      }
+      .search input {
+        flex: 1;
+        padding: 12px 14px;
+        border: 1px solid #d8dde9;
+        border-radius: 10px;
+      }
+      .search button {
+        padding: 12px 16px;
+        border: none;
+        border-radius: 10px;
+        background: #0ea5e9;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .search button:hover {
+        background: #0284c7;
+      }
+      /* Categories */
+      .section {
+        margin-top: 36px;
+      }
+      .section h2 {
+        font-size: 22px;
+        margin: 0 0 12px 0;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 12px;
+      }
+      @media (max-width: 960px) {
+        .hero-inner {
+          grid-template-columns: 1fr;
+        }
+        .grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      @media (max-width: 560px) {
+        .grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .title {
+          font-size: 32px;
+        }
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid #e6eaf2;
+        border-radius: 12px;
+        padding: 14px;
+        text-align: center;
+      }
+      .card:hover {
+        border-color: #c9d3e6;
+        transform: translateY(-1px);
+      }
+      .card small {
+        display: block;
+        color: #64748b;
+        margin-top: 6px;
+      }
+      /* Highlights */
+      .highlights {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+      @media (max-width: 960px) {
+        .highlights {
+          grid-template-columns: 1fr;
+        }
+      }
+      .highlight {
+        background: #ffffff;
+        border: 1px solid #e6eaf2;
+        border-radius: 12px;
+        padding: 16px;
+      }
+      .muted {
+        color: #64748b;
+      }
+      footer {
+        margin: 40px 0 10px 0;
+        color: #94a3b8;
+        font-size: 13px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- HERO -->
+      <section class="hero">
+        <div class="hero-inner">
+          <div class="brand">
+            <img
+              src="{% static 'storefront/images/Logo.png' %}"
+              alt="AuroraMart logo"
+              class="logo-img"
+              width="320"
+              height="320"
+            />
+            <h1 class="wordmark">AuroraMart</h1>
+            <p class="subtitle">
+              Shop smart, every day. Curated electronics, home, beauty, sports,
+              books, and more.
+            </p>
+            <div class="cta">
+              <a class="btn primary" href="{% url 'storefront:product_list' %}"
+                >Shop all products</a
+              >
+              <a class="btn" href="{% url 'storefront:cart_view' %}"
+                >View cart</a
+              >
+            </div>
+
+            <!-- Quick search -->
+            <form class="search" action="{% url 'storefront:product_list' %}" method="get">
+              <input type="text" name="q" placeholder="Search products..." />
+              <button type="submit">Search</button>
+            </form>
+          </div>
+
+          <div class="hero-graphic hero-poster" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <!-- CATEGORIES -->
+      <section class="section">
+        <h2>Browse by category</h2>
+        <div class="grid">
+          <a
+            class="card"
+            href="{% url 'storefront:product_list' %}?cat=electronics"
+          >
+            Electronics <small>Headphones, peripherals, gadgets</small>
+          </a>
+          <a
+            class="card"
+            href="{% url 'storefront:product_list' %}?cat=fashion"
+          >
+            Fashion <small>Men, Women</small>
+          </a>
+          <a class="card" href="{% url 'storefront:product_list' %}?cat=home">
+            Home &amp; Kitchen <small>Cookware, storage</small>
+          </a>
+          <a class="card" href="{% url 'storefront:product_list' %}?cat=beauty">
+            Beauty <small>Skincare, personal care</small>
+          </a>
+          <a class="card" href="{% url 'storefront:product_list' %}?cat=sports">
+            Sports &amp; Outdoors <small>Fitness, hiking</small>
+          </a>
+          <a class="card" href="{% url 'storefront:product_list' %}?cat=books">
+            Books <small>Bestsellers, non-fiction</small>
+          </a>
+        </div>
+      </section>
+
+      <!-- HIGHLIGHTS -->
+      <section class="section">
+        <h2>Why shop with us</h2>
+        <div class="highlights">
+          <div class="highlight">
+            <strong>Personalised suggestions</strong>
+            <p class="muted">
+              Cold-start onboarding points you to a relevant aisle from the
+              first session.
+            </p>
+          </div>
+          <div class="highlight">
+            <strong>Tasteful add-ons</strong>
+            <p class="muted">
+              “Frequently bought together” and “Complete the set” help you
+              decide faster.
+            </p>
+          </div>
+          <div class="highlight">
+            <strong>Everyday quality</strong>
+            <p class="muted">
+              Curated catalogue so you don’t sift through thousands of similar
+              SKUs.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <footer>© {{ now|default:"" }} AuroraMart</footer>
+    </div>
+  </body>
+</html>

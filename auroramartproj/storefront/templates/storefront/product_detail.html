@@ -1,0 +1,7 @@
+<h1>{{ product.name }}</h1>
+<p>{{ product.description }}</p>
+<p>Category: {{ product.category.name }}</p>
+<p>Price: ${{ product.price }}</p>
+<p>Stock: {{ product.stock }}</p>
+<p><a href="{% url 'storefront:cart_add' product.pk %}">Add to cart</a></p>
+<a href="{% url 'storefront:product_list' %}">Back</a>
