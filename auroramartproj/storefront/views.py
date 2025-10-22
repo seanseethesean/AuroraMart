@@ -1,74 +1,112 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db import transaction
-from products.models import Product
-from customers.models import Customer
-from orders.models import Order, OrderItem
+from django.db.models import Sum
+from adminpanel.models import Product
+from .models import CartItem, Order, OrderItem, Recommendation
 
+# -----------------------------
+# HOME PAGE
+# -----------------------------
 def home(request):
-    return render(request, 'storefront/home.html')
+    products = Product.objects.all()[:8]  # show 8 featured items
+    return render(request, 'storefront/home.html', {'products': products})
 
+# -----------------------------
+# PRODUCT LIST
+# -----------------------------
 def product_list(request):
-    qs = Product.objects.select_related('category').order_by('name')
-    return render(request, 'storefront/product_list.html', {'products': qs})
+    products = Product.objects.all()
+    return render(request, 'storefront/product_list.html', {'products': products})
 
+# -----------------------------
+# PRODUCT DETAIL
+# -----------------------------
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk)
     return render(request, 'storefront/product_detail.html', {'product': product})
 
-def _get_cart(session):
-    return session.setdefault('cart', {})  # {product_id: qty}
-
+# -----------------------------
+# CART VIEW
+# -----------------------------
+@login_required
 def cart_view(request):
-    cart = _get_cart(request.session)
-    items, total = [], 0
-    for pid, qty in cart.items():
-        p = Product.objects.get(pk=pid)
-        subtotal = p.price * qty
-        items.append({'product': p, 'qty': qty, 'subtotal': subtotal})
-        total += subtotal
-    return render(request, 'storefront/cart.html', {'items': items, 'total': total})
+    cart_items = CartItem.objects.filter(user=request.user)
+    total_price = sum(item.subtotal() for item in cart_items)
+    return render(request, 'storefront/cart.html', {
+        'cart_items': cart_items,
+        'total_price': total_price
+    })
 
+# -----------------------------
+# ADD TO CART
+# -----------------------------
+@login_required
 def cart_add(request, pk):
-    cart = _get_cart(request.session)
-    cart[str(pk)] = cart.get(str(pk), 0) + 1
-    request.session.modified = True
-    messages.success(request, 'Added to cart.')
+    product = get_object_or_404(Product, pk=pk)
+    quantity = int(request.POST.get('quantity', 1))
+    cart_item, created = CartItem.objects.get_or_create(user=request.user, product=product)
+    cart_item.quantity += quantity if not created else quantity
+    cart_item.save()
+    messages.success(request, f"{product.name} added to cart!")
     return redirect('storefront:cart_view')
 
+# -----------------------------
+# REMOVE FROM CART
+# -----------------------------
+@login_required
 def cart_remove(request, pk):
-    cart = _get_cart(request.session)
-    cart.pop(str(pk), None)
-    request.session.modified = True
+    product = get_object_or_404(Product, pk=pk)
+    CartItem.objects.filter(user=request.user, product=product).delete()
+    messages.info(request, f"{product.name} removed from cart.")
     return redirect('storefront:cart_view')
 
-@transaction.atomic
+# -----------------------------
+# CHECKOUT
+# -----------------------------
+@login_required
 def checkout(request):
-    cart = _get_cart(request.session)
-    if not cart:
-        messages.warning(request, 'Your cart is empty.')
-        return redirect('storefront:product_list')
+    cart_items = CartItem.objects.filter(user=request.user)
+    total_price = sum(item.subtotal() for item in cart_items)
 
-    # For now, attach the first customer or a placeholder guest flow
-    customer = Customer.objects.first()  # replace with logged-in mapping later
+    if request.method == 'POST':
+        address = request.POST['address']
+        payment_method = request.POST['payment_method']
 
-    order = Order.objects.create(customer=customer, status='pending', total_price=0)
-    total = 0
-    for pid, qty in cart.items():
-        p = Product.objects.select_for_update().get(pk=pid)
-        OrderItem.objects.create(order=order, product=p, quantity=qty, subtotal=p.price * qty)
-        p.stock = max(0, p.stock - qty)
-        p.save(update_fields=['stock'])
-        total += p.price * qty
+        order = Order.objects.create(
+            user=request.user,
+            total_price=total_price,
+            address=address,
+            payment_method=payment_method,
+            status='Processing'
+        )
 
-    order.total_price = total
-    order.save(update_fields=['total_price'])
+        for item in cart_items:
+            OrderItem.objects.create(
+                order=order,
+                product=item.product,
+                quantity=item.quantity,
+                price=item.product.price
+            )
 
-    # clear cart
-    request.session['cart'] = {}
-    request.session.modified = True
-    return redirect('storefront:order_placed', order_id=order.id)
+        cart_items.delete()  # empty cart after order
+        messages.success(request, "Order placed successfully!")
+        return redirect('storefront:order_placed', order_id=order.id)
 
+    return render(request, 'storefront/checkout.html', {'cart_items': cart_items, 'total_price': total_price})
+
+# -----------------------------
+# ORDER CONFIRMATION
+# -----------------------------
+@login_required
 def order_placed(request, order_id):
     order = get_object_or_404(Order, pk=order_id)
     return render(request, 'storefront/order_placed.html', {'order': order})
+
+# -----------------------------
+# RECOMMENDATIONS (AI)
+# -----------------------------
+@login_required
+def recommendations(request):
+    recs = Recommendation.objects.filter(user=request.user).select_related('product')
+    return render(request, 'storefront/recommendations.html', {'recommendations': recs})

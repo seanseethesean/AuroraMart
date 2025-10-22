@@ -1,3 +1,6 @@
-<h1>Order placed</h1>
-<p>Order #{{ order.id }} total: ${{ order.total_price }}</p>
-<a href="{% url 'storefront:product_list' %}">Continue shopping</a>
+{% extends 'storefront/base.html' %}
+{% block content %}
+<h2>Thank you for your purchase!</h2>
+<p>Your order #{{ order.id }} has been placed successfully.</p>
+<a href="{% url 'storefront:home' %}" class="btn btn-outline-primary">Continue Shopping</a>
+{% endblock %}

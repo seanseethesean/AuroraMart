@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 
 app_name = 'storefront'
+
 urlpatterns = [
     path('', views.home, name='home'),
     path('products/', views.product_list, name='product_list'),
@@ -11,4 +12,5 @@ urlpatterns = [
     path('cart/remove/<int:pk>/', views.cart_remove, name='cart_remove'),
     path('checkout/', views.checkout, name='checkout'),
     path('order/placed/<int:order_id>/', views.order_placed, name='order_placed'),
+    path('recommendations/', views.recommendations, name='recommendations'),
 ]

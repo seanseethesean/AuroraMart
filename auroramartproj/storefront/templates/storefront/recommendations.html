@@ -1,0 +1,18 @@
+{% extends 'storefront/base.html' %}
+{% block content %}
+<h2>Recommended for You</h2>
+<div class="row">
+  {% for rec in recommendations %}
+  <div class="col-md-3 mb-4">
+    <div class="card h-100">
+      <img src="{{ rec.product.image.url }}" class="card-img-top" alt="{{ rec.product.name }}">
+      <div class="card-body">
+        <h5 class="card-title">{{ rec.product.name }}</h5>
+        <p class="text-muted">{{ rec.reason }}</p>
+        <a href="{% url 'storefront:product_detail' rec.product.id %}" class="btn btn-outline-dark w-100">View</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

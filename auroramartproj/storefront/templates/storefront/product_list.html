@@ -1,13 +1,18 @@
-<h1>Products</h1>
-<ul>
-  {% for p in products %}
-    <li>
-      <a href="{% url 'storefront:product_detail' p.pk %}">{{ p.name }}</a>
-      – {{ p.category.name }} – ${{ p.price }} – Stock: {{ p.stock }}
-      <a href="{% url 'storefront:cart_add' p.pk %}">Add</a>
-    </li>
-  {% empty %}
-    <li>No products yet.</li>
+{% extends 'storefront/base.html' %}
+{% block content %}
+<h2 class="mb-4">All Products</h2>
+<div class="row">
+  {% for product in products %}
+  <div class="col-md-3 mb-4">
+    <div class="card h-100">
+      <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+      <div class="card-body">
+        <h5 class="card-title">{{ product.name }}</h5>
+        <p class="card-text">${{ product.price }}</p>
+        <a href="{% url 'storefront:product_detail' product.id %}" class="btn btn-outline-dark w-100">View</a>
+      </div>
+    </div>
+  </div>
   {% endfor %}
-</ul>
-<a href="{% url 'storefront:cart_view' %}">View cart</a>
+</div>
+{% endblock %}

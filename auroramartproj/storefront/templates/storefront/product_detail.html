@@ -1,7 +1,21 @@
-<h1>{{ product.name }}</h1>
-<p>{{ product.description }}</p>
-<p>Category: {{ product.category.name }}</p>
-<p>Price: ${{ product.price }}</p>
-<p>Stock: {{ product.stock }}</p>
-<p><a href="{% url 'storefront:cart_add' product.pk %}">Add to cart</a></p>
-<a href="{% url 'storefront:product_list' %}">Back</a>
+{% extends 'storefront/base.html' %}
+{% block content %}
+<div class="row">
+  <div class="col-md-6">
+    <img src="{{ product.image.url }}" class="img-fluid rounded">
+  </div>
+  <div class="col-md-6">
+    <h2>{{ product.name }}</h2>
+    <p class="text-muted">{{ product.category }}</p>
+    <p>{{ product.description }}</p>
+    <h4>${{ product.price }}</h4>
+
+    <form action="{% url 'storefront:cart_add' product.id %}" method="post">
+      {% csrf_token %}
+      <label>Quantity:</label>
+      <input type="number" name="quantity" value="1" min="1" class="form-control w-25 mb-3">
+      <button type="submit" class="btn btn-success">Add to Cart</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
