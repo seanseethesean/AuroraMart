@@ -1,0 +1,15 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}Customer Detail | AuroraMart{% endblock %}
+
+{% block content %}
+<h2>Customer Details</h2>
+<div class="card mt-3 shadow-sm">
+  <div class="card-body">
+    <p><strong>Username:</strong> {{ customer.user.username }}</p>
+    <p><strong>Email:</strong> {{ customer.user.email }}</p>
+    <p><strong>Phone:</strong> {{ customer.phone }}</p>
+    <p><strong>Address:</strong> {{ customer.address }}</p>
+  </div>
+</div>
+<a href="{% url 'adminpanel:customer_list' %}" class="btn btn-secondary mt-3">Back to Customers</a>
+{% endblock %}
