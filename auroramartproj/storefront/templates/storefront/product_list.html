@@ -1,18 +1,80 @@
-{% extends 'storefront/base.html' %}
+{% extends "storefront/base.html" %}
+{% load static %}
+{% block title %}All Products — AuroraMart{% endblock %}
+{% block extra_head %}
+<style>
+  .page-title { font-size: 28px; font-weight: 800; margin: 12px 0 20px; }
+  .toolbar { display:flex; gap:8px; align-items:center; margin-bottom: 16px; }
+  .toolbar input, .toolbar select {
+    padding:10px 12px; border:1px solid #d8dde9; border-radius:10px;
+  }
+  .grid { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:14px; }
+  @media (max-width: 960px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+  .p-card { background:#fff; border:1px solid #e6eaf2; border-radius:12px; overflow:hidden; }
+  .p-card:hover { border-color:#c9d3e6; transform: translateY(-1px); }
+  .p-thumb { aspect-ratio: 4/3; width:100%; object-fit:cover; background:#f8fafc; display:block; }
+  .p-body { padding:12px; }
+  .p-name { font-weight:700; margin:0 0 6px 0; }
+  .p-meta { color:#64748b; font-size:14px; margin-bottom:10px; }
+  .p-actions { display:flex; justify-content:space-between; align-items:center; }
+  .price { font-weight:800; }
+  .btn { display:inline-block; padding:10px 12px; border-radius:10px; border:1px solid #cfd7e3; background:#fff; font-weight:600; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color:#fff; }
+  .empty {
+    text-align:center; padding:60px 16px; color:#64748b; border:1px dashed #d8dde9;
+    border-radius:12px; background:#fff;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<h2 class="mb-4">All Products</h2>
-<div class="row">
-  {% for product in products %}
-  <div class="col-md-3 mb-4">
-    <div class="card h-100">
-      <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
-      <div class="card-body">
-        <h5 class="card-title">{{ product.name }}</h5>
-        <p class="card-text">${{ product.price }}</p>
-        <a href="{% url 'storefront:product_detail' product.id %}" class="btn btn-outline-dark w-100">View</a>
+  <h1 class="page-title">All Products</h1>
+
+  <!-- Filters / search -->
+  <form class="toolbar" action="{% url 'storefront:product_list' %}" method="get">
+    <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search products..." />
+    <select name="cat">
+      <option value="">All categories</option>
+      {% for c in categories %}
+        <option value="{{ c }}" {% if request.GET.cat == c %}selected{% endif %}>{{ c|title }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn" type="submit">Apply</button>
+  </form>
+
+  {% if products %}
+    <div class="grid">
+      {% for product in products %}
+        <div class="p-card">
+          <a href="{% url 'storefront:product_detail' product.id %}">
+            {% if product.image %}
+              <img class="p-thumb" src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+              <img class="p-thumb" src="{% static 'storefront/images/placeholder.png' %}" alt="{{ product.name }}">
+            {% endif %}
+          </a>
+          <div class="p-body">
+            <h3 class="p-name"><a href="{% url 'storefront:product_detail' product.id %}">{{ product.name }}</a></h3>
+            <div class="p-meta">{{ product.category|title }}</div>
+            <div class="p-actions">
+              <div class="price">${{ product.price }}</div>
+              <form action="{% url 'storefront:cart_add' product.id %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="quantity" value="1">
+                <button class="btn primary" type="submit">Add</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty">
+      No products found. Try a different search or category.
+      <div style="margin-top:10px;">
+        <a class="btn" href="{% url 'storefront:product_list' %}">Clear filters</a>
       </div>
     </div>
-  </div>
-  {% endfor %}
-</div>
+  {% endif %}
 {% endblock %}

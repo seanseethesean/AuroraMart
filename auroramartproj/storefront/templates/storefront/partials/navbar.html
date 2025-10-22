@@ -1,0 +1,27 @@
+{% load static %}
+<div class="nav-wrap">
+  <nav class="nav">
+    <a class="brand" href="{% url 'storefront:home' %}">
+      <img
+        src="{% static 'storefront/images/Logo.png' %}"
+        alt="AuroraMart"
+        class="logo-img"
+      />
+      <h1 class="wordmark">AuroraMart</h1>
+    </a>
+    <div class="nav-links">
+      <a class="chip" href="{% url 'storefront:cart_view' %}">Cart</a>
+      {% if user.is_authenticated %}
+      <span class="muted" style="font-size: 14px">Hi, {{ user.username }}</span>
+      <a class="chip" href="{% url 'storefront:logout' %}">Log out</a>
+      {% else %}
+      <a class="chip" href="{% url 'login' %}">Log in</a>
+      <a class="chip" href="{% url 'storefront:register' %}">Sign up</a>
+      {% endif %}
+
+      <a class="chip primary" href="{% url 'storefront:product_list' %}"
+        >Shop all</a
+      >
+    </div>
+  </nav>
+</div>
