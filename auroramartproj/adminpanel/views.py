@@ -1,90 +1,111 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import user_passes_test, login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from adminpanel.models import Product
-from storefront.models import Order
+from django.urls import reverse
+from django.db.models import Sum
+
+from .models import Product, Customer
 from .forms import ProductForm
-from django.contrib.auth.models import User
 
-# --- Helper for restricting access ---
-def staff_required(user):
-    return user.is_staff
 
-# --- Login view ---
 def login_view(request):
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        password = request.POST.get('password')
+    """Login using email + password. Only staff users allowed into adminpanel views."""
+    if request.method == "POST":
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
-            messages.error(request, "Invalid email or password")
-            return redirect('adminpanel:login')
+            user = None
 
-        user = authenticate(request, username=user.username, password=password)
-        if user is not None and user.is_staff:
-            login(request, user)
-            return redirect('adminpanel:dashboard')
+        if user is not None:
+            user = authenticate(request, username=user.username, password=password)
+            if user is not None:
+                if user.is_staff:
+                    login(request, user)
+                    return redirect("adminpanel:dashboard")
+                else:
+                    messages.error(request, "You do not have permission to access the admin panel.")
+            else:
+                messages.error(request, "Invalid credentials")
         else:
-            messages.error(request, "Access denied.")
-    return render(request, 'adminpanel/login.html')
+            messages.error(request, "Invalid credentials")
 
-# --- Dashboard ---
-@user_passes_test(staff_required)
+    return render(request, "adminpanel/login.html")
+
+
+def logout_view(request):
+    logout(request)
+    return redirect(reverse("adminpanel:login"))
+
+
+@staff_member_required
 def dashboard(request):
     product_count = Product.objects.count()
-    customer_count = User.objects.filter(is_staff=False).count()
-    total_inventory = sum(p.stock for p in Product.objects.all())
-    return render(request, 'adminpanel/dashboard.html', {
-        'product_count': product_count,
-        'customer_count': customer_count,
-        'total_inventory': total_inventory,
-    })
+    customer_count = Customer.objects.count()
+    total_inventory = Product.objects.aggregate(total_stock=Sum("stock"))['total_stock'] or 0
 
-# --- Products ---
-@user_passes_test(staff_required)
+    context = {
+        "product_count": product_count,
+        "customer_count": customer_count,
+        "total_inventory": total_inventory,
+    }
+    return render(request, "adminpanel/dashboard.html", context)
+
+
+@staff_member_required
 def product_list(request):
     products = Product.objects.all()
-    return render(request, 'adminpanel/product_list.html', {'products': products})
+    return render(request, "adminpanel/product_list.html", {"products": products})
 
-@user_passes_test(staff_required)
+
+@staff_member_required
 def add_product(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
-            return redirect('adminpanel:product_list')
+            messages.success(request, "Product added")
+            return redirect("adminpanel:product_list")
     else:
         form = ProductForm()
-    return render(request, 'adminpanel/product_edit.html', {'form': form})
+    return render(request, "adminpanel/product_edit.html", {"form": form, "title": "Add Product"})
 
-@user_passes_test(staff_required)
+
+@staff_member_required
 def edit_product(request, pk):
     product = get_object_or_404(Product, pk=pk)
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ProductForm(request.POST, request.FILES, instance=product)
         if form.is_valid():
             form.save()
-            return redirect('adminpanel:product_list')
+            messages.success(request, "Product updated")
+            return redirect("adminpanel:product_list")
     else:
         form = ProductForm(instance=product)
-    return render(request, 'adminpanel/product_edit.html', {'form': form})
+    return render(request, "adminpanel/product_edit.html", {"form": form, "title": "Edit Product", "product": product})
 
-@user_passes_test(staff_required)
+
+@staff_member_required
 def delete_product(request, pk):
     product = get_object_or_404(Product, pk=pk)
-    product.delete()
-    return redirect('adminpanel:product_list')
+    if request.method == "POST":
+        product.delete()
+        messages.success(request, "Product deleted")
+        return redirect("adminpanel:product_list")
+    return render(request, "adminpanel/product_confirm_delete.html", {"product": product})
 
-# --- Customers ---
-@user_passes_test(staff_required)
+
+@staff_member_required
 def customer_list(request):
-    customers = User.objects.filter(role='customer')
-    return render(request, 'adminpanel/customer_list.html', {'customers': customers})
+    customers = Customer.objects.select_related("user").all()
+    return render(request, "adminpanel/customer_list.html", {"customers": customers})
 
-@user_passes_test(staff_required)
+
+@staff_member_required
 def customer_detail(request, pk):
-    customer = get_object_or_404(User, pk=pk)
-    return render(request, 'adminpanel/customer_detail.html', {'customer': customer})
+    customer = get_object_or_404(Customer, pk=pk)
+    return render(request, "adminpanel/customer_detail.html", {"customer": customer})

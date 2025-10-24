@@ -3,37 +3,29 @@
 
 {% block content %}
 <h2 class="mb-4">Dashboard</h2>
-<div class="row g-4">
-  <div class="col-md-3">
-    <div class="card shadow-sm border-0">
-      <div class="card-body text-center">
-        <h5>Products</h5>
-        <p class="fs-4 fw-bold">{{ product_count }}</p>
-      </div>
+<div class="grid">
+  <div class="card card-stat">
+    <div>
+      <h5 class="text-muted">Products</h5>
+      <div class="stat-value">{{ product_count }}</div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="card shadow-sm border-0">
-      <div class="card-body text-center">
-        <h5>Customers</h5>
-        <p class="fs-4 fw-bold">{{ customer_count }}</p>
-      </div>
+  <div class="card card-stat">
+    <div>
+      <h5 class="text-muted">Customers</h5>
+      <div class="stat-value">{{ customer_count }}</div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="card shadow-sm border-0">
-      <div class="card-body text-center">
-        <h5>Inventory</h5>
-        <p class="fs-4 fw-bold">{{ total_inventory }}</p>
-      </div>
+  <div class="card card-stat">
+    <div>
+      <h5 class="text-muted">Inventory</h5>
+      <div class="stat-value">{{ total_inventory }}</div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="card shadow-sm border-0">
-      <div class="card-body text-center">
-        <h5>AI Insights</h5>
-        <p class="fs-4 fw-bold">Coming Soon</p>
-      </div>
+  <div class="card card-stat">
+    <div>
+      <h5 class="text-muted">AI Insights</h5>
+      <div class="stat-value">Coming Soon</div>
     </div>
   </div>
 </div>

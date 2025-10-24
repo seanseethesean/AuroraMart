@@ -1,0 +1,39 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}Products | AuroraMart{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Products</h2>
+  <a href="{% url 'adminpanel:add_product' %}" class="btn btn-accent">Add Product</a>
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Category</th>
+      <th>Price</th>
+      <th>Stock</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for product in products %}
+      <tr>
+        <td>{{ product.id }}</td>
+        <td>{{ product.name }}</td>
+        <td>{{ product.category }}</td>
+        <td>${{ product.price }}</td>
+        <td>{{ product.stock }}</td>
+        <td>
+          <a href="{% url 'adminpanel:edit_product' product.id %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+          <a href="{% url 'adminpanel:delete_product' product.id %}" class="btn btn-sm btn-outline-danger">Delete</a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6" class="text-center text-muted">No products found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

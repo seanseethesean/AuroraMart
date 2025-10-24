@@ -1,0 +1,29 @@
+/* Minimal storefront styles used by admin to match aesthetics */
+:root{
+  --brand-bg: #0d6efd; /* bootstrap primary */
+  --brand-dark: #0b2b4a;
+  --brand-light: #f8f9fa;
+  --accent: #ffc107;
+}
+
+body{
+  background-color: #ffffff;
+  color: #222;
+}
+
+.navbar-dark.bg-dark{
+  background-color: #0f172a !important; /* match admin dark sidebar */
+}
+
+.header-logo{
+  height: 36px;
+}
+
+.container .card{
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(15,23,42,0.06);
+}
+
+/* small helpers */
+.text-accent{ color: var(--brand-bg); }
+.btn-accent{ background: var(--brand-bg); color: #fff; border: none; }
