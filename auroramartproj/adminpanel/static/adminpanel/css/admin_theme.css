@@ -1,8 +1,11 @@
 /* Admin theme that matches storefront palette */
 :root {
   --bg: #f6f7fb;
-  --fg: #aed1f5;  
-  --text: #0f172a; 
+  --fg: #f8fafc;  /* Lighter sidebar background */
+  --text: #0f172a; /* Darker text for better contrast */
+  --text-dark: #0b1220; /* Very dark text for maximum contrast */
+  --muted: #64748b; /* Slightly darker muted text for better contrast */
+  --card: #ffffff;
   --accent: #2563eb;
   --accent-2: #1e40af;
   --ring: #e2e8f0;

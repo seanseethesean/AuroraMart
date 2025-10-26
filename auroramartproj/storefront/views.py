@@ -4,6 +4,25 @@ from django.contrib import messages
 from django.db.models import Sum
 from adminpanel.models import Product
 from .models import CartItem, Order, OrderItem, Recommendation
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login as auth_login
+from adminpanel.models import Customer
+
+# -----------------------------
+# Log In
+# -----------------------------
+def register(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            # ensure a Customer profile exists
+            Customer.objects.get_or_create(user=user)
+            auth_login(request, user)
+            return redirect('storefront:home')
+    else:
+        form = UserCreationForm()
+    return render(request, 'storefront/register.html', {'form': form})
 
 # -----------------------------
 # HOME PAGE
@@ -15,9 +34,26 @@ def home(request):
 # -----------------------------
 # PRODUCT LIST
 # -----------------------------
+from django.db.models import Q
+
 def product_list(request):
-    products = Product.objects.all()
-    return render(request, 'storefront/product_list.html', {'products': products})
+    qs = Product.objects.all().order_by('name')
+
+    q = request.GET.get('q') or ""
+    cat = request.GET.get('cat') or ""
+
+    if q:
+        qs = qs.filter(
+            Q(name__icontains=q) | Q(description__icontains=q) | Q(sku__icontains=q)
+        )
+    if cat:
+        qs = qs.filter(category__iexact=cat)
+
+    categories = Product.objects.values_list('category', flat=True).distinct().order_by('category')
+    return render(request, 'storefront/product_list.html', {
+        'products': qs,
+        'categories': categories,
+    })
 
 # -----------------------------
 # PRODUCT DETAIL

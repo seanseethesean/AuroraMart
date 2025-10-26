@@ -1,18 +1,20 @@
-{% extends 'storefront/base.html' %}
+{% extends "storefront/base.html" %}
+{% block title %}Shop Products — AuroraMart{% endblock %}
 {% block content %}
-<h2 class="mb-4">All Products</h2>
-<div class="row">
+<h2>All Products</h2>
+<form method="get" class="search">
+  <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search products...">
+  <button type="submit">Search</button>
+</form>
+
+<div class="grid section">
   {% for product in products %}
-  <div class="col-md-3 mb-4">
-    <div class="card h-100">
-      <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
-      <div class="card-body">
-        <h5 class="card-title">{{ product.name }}</h5>
-        <p class="card-text">${{ product.price }}</p>
-        <a href="{% url 'storefront:product_detail' product.id %}" class="btn btn-outline-dark w-100">View</a>
-      </div>
-    </div>
-  </div>
+    <a class="card" href="{% url 'storefront:product_detail' product.id %}">
+      <strong>{{ product.name }}</strong><br>
+      <small>${{ product.price }}</small>
+    </a>
+  {% empty %}
+    <p>No products found.</p>
   {% endfor %}
 </div>
 {% endblock %}

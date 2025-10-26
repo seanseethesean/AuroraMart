@@ -1,0 +1,18 @@
+{% extends "storefront/base.html" %}
+{% block title %}Login — AuroraMart{% endblock %}
+{% block content %}
+<h2>Login</h2>
+<form method="post">
+  {% csrf_token %}
+  <div class="section">
+    <label>Username</label><br>
+    <input type="text" name="username" required>
+  </div>
+  <div class="section">
+    <label>Password</label><br>
+    <input type="password" name="password" required>
+  </div>
+  <button class="chip primary" type="submit">Login</button>
+</form>
+<p>Don't have an account? <a href="{% url 'storefront:register' %}">Register here</a>.</p>
+{% endblock %}

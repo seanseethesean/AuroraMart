@@ -68,11 +68,15 @@ def add_product(request):
         form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
-            messages.success(request, "Product added")
+            messages.success(request, "Product added successfully")
             return redirect("adminpanel:product_list")
     else:
         form = ProductForm()
-    return render(request, "adminpanel/product_edit.html", {"form": form, "title": "Add Product"})
+    return render(request, "adminpanel/product_edit.html", {
+        "form": form, 
+        "title": "Add Product",
+        "show_messages": False  # Don't show messages on form page
+    })
 
 
 @staff_member_required
@@ -82,19 +86,25 @@ def edit_product(request, pk):
         form = ProductForm(request.POST, request.FILES, instance=product)
         if form.is_valid():
             form.save()
-            messages.success(request, "Product updated")
+            messages.success(request, "Product updated successfully")
             return redirect("adminpanel:product_list")
     else:
         form = ProductForm(instance=product)
-    return render(request, "adminpanel/product_edit.html", {"form": form, "title": "Edit Product", "product": product})
+    return render(request, "adminpanel/product_edit.html", {
+        "form": form, 
+        "title": "Edit Product",
+        "product": product,
+        "show_messages": False  # Don't show messages on form page
+    })
 
 
 @staff_member_required
 def delete_product(request, pk):
     product = get_object_or_404(Product, pk=pk)
     if request.method == "POST":
+        name = product.name  # Store name before deletion
         product.delete()
-        messages.success(request, "Product deleted")
+        messages.success(request, f"Product '{name}' deleted successfully")
         return redirect("adminpanel:product_list")
     return render(request, "adminpanel/product_confirm_delete.html", {"product": product})
 
@@ -109,3 +119,22 @@ def customer_list(request):
 def customer_detail(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
     return render(request, "adminpanel/customer_detail.html", {"customer": customer})
+
+
+@staff_member_required
+def toggle_customer(request, pk):
+    if request.method != "POST":
+        return redirect("adminpanel:customer_list")
+        
+    customer = get_object_or_404(Customer, pk=pk)
+    customer.user.is_active = not customer.user.is_active
+    customer.user.save()
+    
+    action = "activated" if customer.user.is_active else "deactivated"
+    messages.success(request, f"Customer account {action} successfully.")
+    
+    # Redirect back to the page that made the request
+    redirect_to = request.META.get('HTTP_REFERER')
+    if redirect_to and redirect_to.endswith(str(pk)):
+        return redirect("adminpanel:customer_detail", pk=pk)
+    return redirect("adminpanel:customer_list")

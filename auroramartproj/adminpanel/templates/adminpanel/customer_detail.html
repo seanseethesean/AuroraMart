@@ -2,14 +2,51 @@
 {% block title %}Customer Detail | AuroraMart{% endblock %}
 
 {% block content %}
-<h2 class="mb-2">Customer Details</h2>
-<div class="card mt-3">
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Customer Details</h2>
+  <span class="badge {% if customer.user.is_active %}bg-success{% else %}bg-danger{% endif %} fs-6">
+    {{ customer.user.is_active|yesno:"Active,Inactive" }}
+  </span>
+</div>
+
+{% if messages %}
+<div class="mb-3">
+  {% for message in messages %}
+    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}">
+      {{ message }}
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
   <div class="card-body">
-    <p><strong>Username:</strong> {{ customer.user.username }}</p>
-    <p><strong>Email:</strong> {{ customer.user.email }}</p>
-    <p><strong>Phone:</strong> {{ customer.phone }}</p>
-    <p><strong>Address:</strong> {{ customer.address }}</p>
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <h5 class="text-muted mb-3">Basic Information</h5>
+        <p><strong>Username:</strong> {{ customer.user.username }}</p>
+        <p><strong>Email:</strong> {{ customer.user.email }}</p>
+        <p><strong>Phone:</strong> {{ customer.phone|default:"-" }}</p>
+        <p><strong>Address:</strong> {{ customer.address|default:"-"|linebreaks }}</p>
+      </div>
+      <div class="col-md-6">
+        <h5 class="text-muted mb-3">Additional Details</h5>
+        <p><strong>Age:</strong> {{ customer.age|default:"-" }}</p>
+        <p><strong>Gender:</strong> {{ customer.gender|default:"-" }}</p>
+        <p><strong>Income Level:</strong> ${{ customer.income|default:"-" }}</p>
+        <p><strong>Join Date:</strong> {{ customer.join_date|date:"F j, Y" }}</p>
+      </div>
+    </div>
+    
+    <div class="d-flex gap-2">
+      <a href="{% url 'adminpanel:customer_list' %}" class="btn btn-outline">Back to Customers</a>
+      <form method="POST" action="{% url 'adminpanel:toggle_customer' customer.id %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn {% if customer.user.is_active %}btn-danger{% else %}btn-accent{% endif %}">
+          {{ customer.user.is_active|yesno:"Deactivate Account,Activate Account" }}
+        </button>
+      </form>
+    </div>
   </div>
 </div>
-<a href="{% url 'adminpanel:customer_list' %}" class="btn btn-accent mt-3">Back to Customers</a>
 {% endblock %}

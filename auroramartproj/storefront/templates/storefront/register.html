@@ -1,0 +1,10 @@
+{% extends "storefront/base.html" %}
+{% block title %}Register — AuroraMart{% endblock %}
+{% block content %}
+<h2>Create an Account</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button class="chip primary" type="submit">Sign Up</button>
+</form>
+{% endblock %}

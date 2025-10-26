@@ -1,5 +1,8 @@
 :root{
   --accent-color: #2563eb; 
+
+:root{
+  --accent-color: #2563eb; /* purple-ish from storefront */
   --accent-contrast: #1e40af;
   --muted: #5b657a;
   --bg: #f8f9fa;
