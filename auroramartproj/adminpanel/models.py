@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
+import os
 
 class Product(models.Model):
     name = models.CharField(max_length=200)
@@ -7,12 +10,14 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)
     description = models.TextField(blank=True)
-    image = models.ImageField(upload_to='products/', blank=True, null=True)
+    # Store uploaded product images inside the adminpanel static folder so
+    # they are available under /static/adminpanel/images/
+    _admin_images_location = os.path.join(settings.BASE_DIR, 'adminpanel', 'static', 'adminpanel', 'images')
+    admin_images_fs = FileSystemStorage(location=_admin_images_location, base_url='/static/adminpanel/images/')
+    image = models.ImageField(upload_to='', storage=admin_images_fs, blank=True, null=True)
 
     def __str__(self):
         return self.name
-
-
 
 class Customer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
