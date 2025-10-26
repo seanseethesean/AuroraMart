@@ -1,5 +1,32 @@
-<h1>Admin Dashboard</h1>
-<p>Links:</p>
-<ul>
-  <li>Manage Products</a></li>
-</ul>
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}Dashboard | AuroraMart{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Dashboard</h2>
+<div class="grid">
+  <div class="card card-stat">
+    <div>
+      <h5 class="text-muted">Products</h5>
+      <div class="stat-value">{{ product_count }}</div>
+    </div>
+  </div>
+  <div class="card card-stat">
+    <div>
+      <h5 class="text-muted">Customers</h5>
+      <div class="stat-value">{{ customer_count }}</div>
+    </div>
+  </div>
+  <div class="card card-stat">
+    <div>
+      <h5 class="text-muted">Inventory</h5>
+      <div class="stat-value">{{ total_inventory }}</div>
+    </div>
+  </div>
+  <div class="card card-stat">
+    <div>
+      <h5 class="text-muted">AI Insights</h5>
+      <div class="stat-value">Coming Soon</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
