@@ -1,21 +1,15 @@
-{% extends 'storefront/base.html' %}
+{% extends "storefront/base.html" %}
+{% block title %}{{ product.name }} — AuroraMart{% endblock %}
 {% block content %}
-<div class="row">
-  <div class="col-md-6">
-    <img src="{{ product.image.url }}" class="img-fluid rounded">
-  </div>
-  <div class="col-md-6">
-    <h2>{{ product.name }}</h2>
-    <p class="text-muted">{{ product.category }}</p>
-    <p>{{ product.description }}</p>
-    <h4>${{ product.price }}</h4>
-
-    <form action="{% url 'storefront:cart_add' product.id %}" method="post">
-      {% csrf_token %}
-      <label>Quantity:</label>
-      <input type="number" name="quantity" value="1" min="1" class="form-control w-25 mb-3">
-      <button type="submit" class="btn btn-success">Add to Cart</button>
-    </form>
-  </div>
+<div class="card" style="text-align:left;">
+  <h2>{{ product.name }}</h2>
+  <p class="muted">{{ product.description }}</p>
+  <p><strong>Price:</strong> ${{ product.price }}</p>
+  <form method="post" action="{% url 'storefront:cart_add' product.id %}">
+    {% csrf_token %}
+    <label>Quantity</label>
+    <input type="number" name="quantity" value="1" min="1">
+    <button class="chip primary" type="submit">Add to Cart</button>
+  </form>
 </div>
 {% endblock %}
