@@ -10,6 +10,11 @@
 <div class="grid section">
   {% for product in products %}
     <a class="card" href="{% url 'storefront:product_detail' product.id %}">
+      {% if product.image %}
+        <div style="height:160px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">
+          <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-height:160px; width:auto;">
+        </div>
+      {% endif %}
       <strong>{{ product.name }}</strong><br>
       <small>${{ product.price }}</small>
     </a>

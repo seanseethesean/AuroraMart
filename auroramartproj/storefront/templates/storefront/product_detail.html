@@ -1,7 +1,18 @@
 {% extends "storefront/base.html" %}
+{% load static %}
 {% block title %}{{ product.name }} — AuroraMart{% endblock %}
 {% block content %}
 <div class="card" style="text-align:left;">
+  {% if product.image %}
+    <div style="text-align:center; margin-bottom:12px;">
+      <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-width:320px; width:100%; height:auto; border-radius:8px;">
+    </div>
+  {% else %}
+    <div style="text-align:center; margin-bottom:12px;">
+      <img src="{% static 'storefront/images/Logo.png' %}" alt="placeholder" style="max-width:320px; width:100%; height:auto; opacity:0.6; border-radius:8px;">
+    </div>
+  {% endif %}
+
   <h2>{{ product.name }}</h2>
   <p class="muted">{{ product.description }}</p>
   <p><strong>Price:</strong> ${{ product.price }}</p>
