@@ -3,9 +3,9 @@
    buttons, forms, card styles, and responsive utilities.
 */
 :root{
-  --accent-color: #6f42c1; /* purple-ish from storefront */
-  --accent-contrast: #ffffff;
-  --muted: #6c757d;
+  --accent-color: #2563eb; /* purple-ish from storefront */
+  --accent-contrast: #1e40af;
+  --muted: #5b657a;
   --bg: #f8f9fa;
   --card-bg: #ffffff;
   --max-width: 1100px;
