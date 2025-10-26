@@ -1,6 +1,10 @@
-{% extends 'storefront/base.html' %}
+{% extends "storefront/base.html" %}
+{% block title %}Order Confirmed — AuroraMart{% endblock %}
 {% block content %}
-<h2>Thank you for your purchase!</h2>
-<p>Your order #{{ order.id }} has been placed successfully.</p>
-<a href="{% url 'storefront:home' %}" class="btn btn-outline-primary">Continue Shopping</a>
+<div class="card" style="text-align:center;">
+  <h2>Thank you for your purchase!</h2>
+  <p>Your order #{{ order.id }} has been placed successfully.</p>
+  <p>We’ll notify you once it’s shipped.</p>
+  <a class="chip primary" href="{% url 'storefront:product_list' %}">Continue Shopping</a>
+</div>
 {% endblock %}

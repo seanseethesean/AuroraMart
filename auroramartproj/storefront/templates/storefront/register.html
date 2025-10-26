@@ -1,21 +1,10 @@
 {% extends "storefront/base.html" %}
-{% block title %}Create account — AuroraMart{% endblock %}
+{% block title %}Register — AuroraMart{% endblock %}
 {% block content %}
-<h1 style="font-weight:800;margin:12px 0 16px;">Create your account</h1>
-<form method="post" style="max-width:420px">
+<h2>Create an Account</h2>
+<form method="post">
   {% csrf_token %}
-  <div class="card" style="text-align:left;">
-    {{ form.non_field_errors }}
-    <label>Username</label>
-    {{ form.username }}
-    <label style="margin-top:10px;">Password</label>
-    {{ form.password1 }}
-    <label style="margin-top:10px;">Confirm password</label>
-    {{ form.password2 }}
-    <button class="chip primary" type="submit" style="margin-top:12px;">Sign up</button>
-  </div>
-  <p class="muted" style="margin-top:10px;">
-    Already have an account? <a href="{% url 'storefront:login' %}">Log in</a>
-  </p>
+  {{ form.as_p }}
+  <button class="chip primary" type="submit">Sign Up</button>
 </form>
 {% endblock %}

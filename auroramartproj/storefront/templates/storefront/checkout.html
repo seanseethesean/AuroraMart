@@ -1,19 +1,21 @@
-{% extends 'storefront/base.html' %}
+{% extends "storefront/base.html" %}
+{% block title %}Checkout — AuroraMart{% endblock %}
 {% block content %}
 <h2>Checkout</h2>
 <form method="post">
   {% csrf_token %}
-  <div class="mb-3">
-    <label>Shipping Address</label>
-    <textarea name="address" class="form-control" required></textarea>
+  <div class="section">
+    <label>Shipping Address</label><br>
+    <textarea name="address" rows="3" required></textarea>
   </div>
-  <div class="mb-3">
-    <label>Payment Method</label>
-    <select name="payment_method" class="form-select">
+  <div class="section">
+    <label>Payment Method</label><br>
+    <select name="payment_method" required>
       <option>Card</option>
+      <option>PayNow</option>
       <option>Cash on Delivery</option>
     </select>
   </div>
-  <button type="submit" class="btn btn-success">Place Order</button>
+  <button class="chip primary" type="submit">Place Order</button>
 </form>
 {% endblock %}
