@@ -1,0 +1,69 @@
+/* Fuller shared stylesheet for storefront and admin
+   This expands on the minimal style and provides variables, layout helpers,
+   buttons, forms, card styles, and responsive utilities.
+*/
+:root{
+  --accent-color: #2563eb; /* purple-ish from storefront */
+  --accent-contrast: #1e40af;
+  --muted: #5b657a;
+  --bg: #f8f9fa;
+  --card-bg: #ffffff;
+  --max-width: 1100px;
+  --radius: 8px;
+}
+
+*{box-sizing:border-box}
+body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:var(--bg); color:#212529; margin:0; padding:0}
+.container{max-width:var(--max-width); margin:24px auto; padding:0 16px}
+
+/* Header / logo */
+.brand{display:flex; align-items:center; gap:12px}
+.brand img{height:40px}
+.brand .title{font-weight:700; color:var(--accent-color); font-size:1.1rem}
+
+/* Buttons */
+.btn{display:inline-block; padding:8px 12px; border-radius:6px; border:1px solid transparent; cursor:pointer; text-decoration:none; font-weight:600}
+.btn-accent{background:var(--accent-color); color:var(--accent-contrast)}
+.btn-outline{background:transparent; border-color:#dee2e6; color:#212529}
+.btn-danger{background:#dc3545; color:white}
+
+/* Form controls */
+.form-group{margin-bottom:12px}
+label{display:block; margin-bottom:6px; font-size:0.9rem; color:var(--muted)}
+input[type=text], input[type=password], input[type=number], textarea, select{width:100%; padding:10px; border-radius:6px; border:1px solid #e9ecef; background:white}
+input:focus, textarea:focus, select:focus{outline:none; box-shadow:0 0 0 3px rgba(111,66,193,0.08); border-color:rgba(111,66,193,0.5)}
+
+/* Cards */
+.card{background:var(--card-bg); padding:16px; border-radius:var(--radius); box-shadow:0 1px 3px rgba(0,0,0,0.04); border:1px solid #e9ecef}
+.card h3{margin:0 0 8px 0}
+
+/* Dashboard grid */
+.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px}
+.card-stat{display:flex; align-items:center; justify-content:space-between}
+.stat-value{font-size:1.6rem; font-weight:700; color:var(--accent-color)}
+.stat-label{color:var(--muted)}
+
+/* Table */
+.table{width:100%; border-collapse:collapse; background:white}
+.table th, .table td{padding:10px 12px; border-bottom:1px solid #f1f3f5; text-align:left}
+.table th{background:#fbfbfc; color:var(--muted); font-weight:600}
+.table tbody tr:hover{background:#fbfbfb}
+
+/* Product card for storefront */
+.product{border-radius:8px; overflow:hidden; background:white}
+.product img{width:100%; display:block}
+.product .meta{padding:8px}
+.product .title{font-weight:600}
+.product .price{color:var(--accent-color); font-weight:700}
+
+/* Utilities */
+.text-muted{color:var(--muted)}
+.text-accent{color:var(--accent-color)}
+.row{display:flex; gap:12px}
+.col{flex:1}
+.center{display:flex; align-items:center; justify-content:center}
+
+@media (max-width:600px){
+  .brand img{height:32px}
+  .stat-value{font-size:1.3rem}
+}
