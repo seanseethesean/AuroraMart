@@ -71,8 +71,36 @@ def cart_view(request):
     total_price = sum(item.subtotal() for item in cart_items)
     return render(request, 'storefront/cart.html', {
         'cart_items': cart_items,
-        'total_price': total_price
+        'total_price': total_price,
+        'total': total_price,
     })
+
+
+@login_required
+def cart_update(request, pk):
+    """Update quantity for a cart item. Supports set, increment, decrement actions."""
+    if request.method != 'POST':
+        return redirect('storefront:cart_view')
+
+    action = request.POST.get('action')
+    quantity = request.POST.get('quantity')
+    cart_item = get_object_or_404(CartItem, user=request.user, product__pk=pk)
+
+    if action == 'increment':
+        cart_item.quantity += 1
+    elif action == 'decrement':
+        if cart_item.quantity > 1:
+            cart_item.quantity -= 1
+    elif quantity is not None:
+        try:
+            q = int(quantity)
+            if q > 0:
+                cart_item.quantity = q
+        except ValueError:
+            pass
+
+    cart_item.save()
+    return redirect('storefront:cart_view')
 
 # -----------------------------
 # ADD TO CART

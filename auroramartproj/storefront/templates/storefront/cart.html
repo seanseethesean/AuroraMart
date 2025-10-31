@@ -5,14 +5,37 @@
 {% if cart_items %}
   <div class="section">
     {% for item in cart_items %}
-      <div class="card" style="text-align:left;">
-        <strong>{{ item.product.name }}</strong><br>
-        Quantity: {{ item.quantity }}<br>
-        Subtotal: ${{ item.subtotal }}
-        <form method="post" action="{% url 'storefront:cart_remove' item.product.id %}">
-          {% csrf_token %}
-          <button class="chip" type="submit">Remove</button>
-        </form>
+      <div class="card" style="text-align:left; display:flex; align-items:center; gap:12px;">
+        {% if item.product.image %}
+          <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" style="width:96px; height:96px; object-fit:cover; border-radius:8px;">
+        {% endif %}
+        <div style="flex:1">
+          <strong>{{ item.product.name }}</strong><br>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
+            <form method="post" action="{% url 'storefront:cart_update' item.product.id %}">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="decrement">
+              <button class="chip" type="submit">-</button>
+            </form>
+            <form method="post" action="{% url 'storefront:cart_update' item.product.id %}">
+              {% csrf_token %}
+              <input type="number" name="quantity" value="{{ item.quantity }}" min="1" style="width:64px; text-align:center; padding:6px; border-radius:6px; border:1px solid #e6eaf2;">
+              <button class="chip" type="submit">Update</button>
+            </form>
+            <form method="post" action="{% url 'storefront:cart_update' item.product.id %}">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="increment">
+              <button class="chip" type="submit">+</button>
+            </form>
+            <div style="margin-left:auto; text-align:right">
+              <div>Subtotal: ${{ item.subtotal }}</div>
+              <form method="post" action="{% url 'storefront:cart_remove' item.product.id %}">
+                {% csrf_token %}
+                <button class="chip" type="submit">Remove</button>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     {% endfor %}
   </div>

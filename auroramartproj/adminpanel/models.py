@@ -10,11 +10,30 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)
     description = models.TextField(blank=True)
-    # Store uploaded product images inside the adminpanel static folder so
-    # they are available under /static/adminpanel/images/
     _admin_images_location = os.path.join(settings.BASE_DIR, 'adminpanel', 'static', 'adminpanel', 'images')
     admin_images_fs = FileSystemStorage(location=_admin_images_location, base_url='/static/adminpanel/images/')
     image = models.ImageField(upload_to='', storage=admin_images_fs, blank=True, null=True)
+    # Product label and optional discount
+    LABEL_CHOICES = [
+        ('', 'None'),
+        ('new', 'New Arrival'),
+        ('discounted', 'Discounted'),
+        ('last_pieces', 'Last Pieces'),
+    ]
+    label = models.CharField(max_length=32, choices=LABEL_CHOICES, blank=True, default='')
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True,
+                                           help_text='Percent discount e.g. 10 for 10%')
+
+    def get_display_price(self):
+        """Return price after applying discount_percent if present."""
+        if self.discount_percent:
+            try:
+                dp = float(self.discount_percent)
+                discounted = float(self.price) * (1 - dp / 100.0)
+                return round(discounted, 2)
+            except Exception:
+                return self.price
+        return self.price
 
     def __str__(self):
         return self.name

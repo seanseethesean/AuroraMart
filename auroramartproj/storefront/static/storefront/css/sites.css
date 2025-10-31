@@ -185,3 +185,13 @@ footer {
   display: block;
 }
 
+/* Cart and checkout enhancements */
+.cart-qty-input{width:64px; text-align:center; padding:8px; border-radius:8px; border:1px solid #e6eaf2}
+.cart-ctl .chip{padding:10px 12px; font-size:16px}
+.checkout-card{padding:18px; border-radius:12px}
+.checkout-card input, .checkout-card textarea, .checkout-card select{padding:10px; border-radius:8px; border:1px solid #e6eaf2}
+.chip.primary{padding:12px 18px; font-size:16px}
+
+/* Product label badge */
+.product-badge{position:absolute; top:12px; left:12px; background:var(--accent); color:#fff; padding:6px 10px; border-radius:999px; font-weight:700; font-size:12px}
+

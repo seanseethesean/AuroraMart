@@ -9,7 +9,10 @@
 
 <div class="grid section">
   {% for product in products %}
-    <a class="card" href="{% url 'storefront:product_detail' product.id %}">
+    <a class="card" href="{% url 'storefront:product_detail' product.id %}" style="position:relative;">
+      {% if product.stock|default:0 < 5 %}
+        <div class="product-badge">Last pieces</div>
+      {% endif %}
       {% if product.image %}
         <div style="height:160px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">
           <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-height:160px; width:auto;">

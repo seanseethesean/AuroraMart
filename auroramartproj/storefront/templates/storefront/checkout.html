@@ -16,6 +16,15 @@
       <option>Cash on Delivery</option>
     </select>
   </div>
+  <div class="section">
+    <h4>Card Details (test only)</h4>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <input name="card_name" placeholder="Name on card" required>
+      <input name="card_number" placeholder="Card number" required>
+      <input name="card_expiry" placeholder="MM/YY" required>
+      <input name="card_cvv" placeholder="CVV" required>
+    </div>
+  </div>
   <button class="chip primary" type="submit">Place Order</button>
 </form>
 {% endblock %}

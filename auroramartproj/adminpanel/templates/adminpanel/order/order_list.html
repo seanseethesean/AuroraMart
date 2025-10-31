@@ -1,0 +1,46 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}Orders | AuroraMart{% endblock %}
+
+{% block content %}
+<h2>Orders</h2>
+
+<form method="get" class="mb-3">
+  <label>Filter by customer id</label>
+  <input type="text" name="customer" value="{{ customer_id }}" placeholder="Customer id">
+  <label>Filter by product id</label>
+  <input type="text" name="product" value="{{ product_id }}" placeholder="Product id">
+  <button class="btn btn-accent" type="submit">Filter</button>
+</form>
+
+<div class="card">
+  <div class="card-body">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Customer</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+          <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.user.username }} ({{ order.user.id }})</td>
+            <td>${{ order.total_price }}</td>
+            <td>{{ order.status }}</td>
+            <td>{{ order.date_ordered }}</td>
+            <td><a href="#" class="btn btn-outline">View</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="text-center text-muted">No orders found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
