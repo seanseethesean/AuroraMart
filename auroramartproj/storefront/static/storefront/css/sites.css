@@ -165,7 +165,7 @@ footer {
 }
 .grid.section .card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 8px 24px rgba(16,24,40,0.08);
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.08);
 }
 .grid.section .card img {
   width: 100%;
@@ -195,3 +195,48 @@ footer {
 /* Product label badge */
 .product-badge{position:absolute; top:12px; left:12px; background:var(--accent); color:#fff; padding:6px 10px; border-radius:999px; font-weight:700; font-size:12px}
 
+/* Cart and checkout enhancements */
+.cart-qty-input{width:64px; text-align:center; padding:8px; border-radius:8px; border:1px solid #e6eaf2}
+.cart-ctl .chip{padding:10px 12px; font-size:16px}
+.checkout-card{padding:18px; border-radius:12px}
+.checkout-card input, .checkout-card textarea, .checkout-card select{padding:10px; border-radius:8px; border:1px solid #e6eaf2}
+.chip.primary{padding:12px 18px; font-size:16px}
+
+/* Product label badge */
+.product-badge{position:absolute; top:12px; left:12px; background:var(--accent); color:#fff; padding:6px 10px; border-radius:999px; font-weight:700; font-size:12px}
+
+.link {
+  color: #2563eb; /* blue */
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.link:hover {
+  color: #1d4ed8; /* darker blue on hover */
+}
+
+/* Login form spacing */
+.section {
+  /* space between Username and Password boxes */
+  margin-bottom: 16px;
+}
+
+form button.chip.primary {
+  /* space above the Login button */
+  margin-top: 8px;
+}
+
+form + p {
+  /* space between the form and the "Don't have..." line */
+  margin-top: 16px;
+}
+
+/* Cart and checkout enhancements */
+.cart-qty-input{width:64px; text-align:center; padding:8px; border-radius:8px; border:1px solid #e6eaf2}
+.cart-ctl .chip{padding:10px 12px; font-size:16px}
+.checkout-card{padding:18px; border-radius:12px}
+.checkout-card input, .checkout-card textarea, .checkout-card select{padding:10px; border-radius:8px; border:1px solid #e6eaf2}
+.chip.primary{padding:12px 18px; font-size:16px}
+
+/* Product label badge */
+.product-badge{position:absolute; top:12px; left:12px; background:var(--accent); color:#fff; padding:6px 10px; border-radius:999px; font-weight:700; font-size:12px}
