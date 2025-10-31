@@ -19,7 +19,8 @@
         </div>
       {% endif %}
       <strong>{{ product.name }}</strong><br>
-      <small>${{ product.price }}</small>
+      <small>${{ product.price }}</small><br>
+      <small class="text-muted" style="font-size: 0.8em;">SKU: {{ product.sku|default:"N/A" }}</small>
     </a>
   {% empty %}
     <p>No products found.</p>

@@ -7,6 +7,7 @@ from .models import CartItem, Order, OrderItem, Recommendation
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login as auth_login
 from adminpanel.models import Customer
+from .forms import OnboardingForm
 
 # -----------------------------
 # Log In
@@ -19,7 +20,7 @@ def register(request):
             # ensure a Customer profile exists
             Customer.objects.get_or_create(user=user)
             auth_login(request, user)
-            return redirect('storefront:home')
+            return redirect('storefront:onboarding')
     else:
         form = UserCreationForm()
     return render(request, 'storefront/register.html', {'form': form})
@@ -30,6 +31,21 @@ def register(request):
 def home(request):
     products = Product.objects.all()[:8]  # show 8 featured items
     return render(request, 'storefront/home.html', {'products': products})
+
+# -----------------------------
+# ONBOARDING
+# -----------------------------
+@login_required
+def onboarding(request):
+    customer = request.user.customer
+    if request.method == 'POST':
+        form = OnboardingForm(request.POST, instance=customer)
+        if form.is_valid():
+            form.save()
+            return redirect('storefront:recommendations')
+    else:
+        form = OnboardingForm(instance=customer)
+    return render(request, 'storefront/onboarding.html', {'form': form})
 
 # -----------------------------
 # PRODUCT LIST
@@ -45,7 +61,7 @@ def product_list(request):
     if q:
         qs = qs.filter(
             Q(name__icontains=q) | Q(description__icontains=q) | Q(sku__icontains=q)
-        )
+        ).distinct()
     if cat:
         qs = qs.filter(category__iexact=cat)
 

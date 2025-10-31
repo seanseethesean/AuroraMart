@@ -5,7 +5,7 @@
 
 {% block extra_head %}
 <style>
-  .hero{position:relative;overflow:hidden;border-radius:16px;background:linear-gradient(135deg,#e8f0ff,#ffffff)}
+  .hero{position:relative;overflow:hidden;border-radius:16px;background:linear-gradient(135deg,#c084fc,#818cf8,#60a5fa)}
   .hero-inner{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;align-items:center;padding:48px}
   .badge{display:inline-block;font-size:12px;padding:6px 10px;border-radius:999px;background:#e2e8f0;color:#0f172a;margin-bottom:10px}
   .subtitle{color:#475569;font-size:16px;margin-bottom:24px}
@@ -58,7 +58,7 @@
       </p>
       <div class="cta">
         <a class="btn primary" href="{% url 'storefront:product_list' %}">Shop all products</a>
-        <a class="btn" href="{% url 'storefront:cart_view' %}">View cart</a>
+        <a class="btn view-cart-button" href="{% url 'storefront:cart_view' %}">View cart</a>
       </div>
 
       <form class="search" action="{% url 'storefront:product_list' %}" method="get">

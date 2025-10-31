@@ -5,6 +5,7 @@ from django.conf import settings
 import os
 
 class Product(models.Model):
+    sku = models.CharField(max_length=50, unique=True, null=True, blank=True, help_text="Unique product identifier")
     name = models.CharField(max_length=200)
     category = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -39,12 +40,63 @@ class Product(models.Model):
         return self.name
 
 class Customer(models.Model):
+    GENDER_CHOICES = [
+        ('M', 'Male'),
+        ('F', 'Female'),
+        ('O', 'Other')
+    ]
+    
+    EMPLOYMENT_CHOICES = [
+        ('FT', 'Full-time'),
+        ('PT', 'Part-time'),
+        ('SE', 'Self-employed'),
+        ('ST', 'Student')
+    ]
+    
+    EDUCATION_CHOICES = [
+        ('HS', 'High School'),
+        ('DP', 'Diploma'),
+        ('BD', 'Bachelor'),
+        ('MS', 'Master'),
+        ('DR', 'Doctorate')
+    ]
+    
+    INCOME_RANGES = [
+        ('0-2000', '$0 - $2,000'),
+        ('2001-4000', '$2,001 - $4,000'),
+        ('4001-6000', '$4,001 - $6,000'),
+        ('6001-8000', '$6,001 - $8,000'),
+        ('8001-10000', '$8,001 - $10,000'),
+        ('10001+', 'Above $10,000')
+    ]
+    
+    CATEGORIES = [
+        ('electronics', 'Electronics'),
+        ('hair', 'Hair & Beauty'),
+        ('fashion', 'Fashion'),
+        ('sports', 'Sports & Outdoors'),
+        ('home', 'Home & Kitchen'),
+        ('books', 'Books'),
+        ('groceries', 'Groceries & Gourmet')
+    ]
+    
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    age = models.IntegerField(blank=True, null=True)
-    gender = models.CharField(max_length=20, blank=True)
+    age = models.IntegerField(null=True)
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, null=True)
     phone = models.CharField(max_length=30, blank=True)
     address = models.TextField(blank=True)
-    income = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    
+    # Required onboarding fields
+    preferred_categories = models.CharField(max_length=100, help_text="Comma-separated list of 3 preferred categories", null=True, blank=True)
+    
+    # Optional onboarding fields
+    employment_status = models.CharField(max_length=2, choices=EMPLOYMENT_CHOICES, blank=True, null=True)
+    occupation = models.CharField(max_length=100, blank=True)
+    education = models.CharField(max_length=2, choices=EDUCATION_CHOICES, blank=True, null=True)
+    household_size = models.PositiveIntegerField(blank=True, null=True)
+    has_children = models.BooleanField(blank=True, null=True)
+    monthly_income = models.CharField(max_length=10, choices=INCOME_RANGES, blank=True, null=True)
+    
     join_date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

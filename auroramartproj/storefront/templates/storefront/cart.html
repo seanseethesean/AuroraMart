@@ -19,7 +19,7 @@
             </form>
             <form method="post" action="{% url 'storefront:cart_update' item.product.id %}">
               {% csrf_token %}
-              <input type="number" name="quantity" value="{{ item.quantity }}" min="1" style="width:64px; text-align:center; padding:6px; border-radius:6px; border:1px solid #e6eaf2;">
+              <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="quantity-input" style="width:64px; text-align:center; padding:6px; border-radius:6px; border:1px solid #e6eaf2;">
               <button class="chip" type="submit">Update</button>
             </form>
             <form method="post" action="{% url 'storefront:cart_update' item.product.id %}">

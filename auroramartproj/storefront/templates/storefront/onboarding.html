@@ -1,0 +1,98 @@
+{% extends "storefront/base.html" %}
+{% block title %}Complete Your Profile — AuroraMart{% endblock %}
+
+{% block content %}
+<div class="auth-card" style="max-width:600px;">
+  <h2>Complete Your Profile</h2>
+  <p class="subtitle">Help us personalize your shopping experience</p>
+
+  {% if form.errors %}
+    <div class="error-message">
+      {% for field, errors in form.errors.items %}
+        {% for error in errors %}
+          {{ error }}
+        {% endfor %}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    
+    <h3>Required Information</h3>
+    <div class="section">
+      <label>Age</label><br>
+      {{ form.age }}
+    </div>
+    
+    <div class="section">
+      <label>Gender</label><br>
+      {{ form.gender }}
+    </div>
+    
+    <div class="section">
+      <label>Preferred Categories (select exactly 3)</label><br>
+      {{ form.preferred_categories }}
+    </div>
+
+    <div class="section" style="margin-top:32px;">
+      <h3>Optional Information</h3>
+      <p class="muted" style="font-size:14px;margin-bottom:20px;">
+        These optional questions help us improve recommendations and personalize your shopping experience.
+      </p>
+
+      <div class="grid" style="gap:20px;">
+        <div>
+          <label>Employment Status</label><br>
+          {{ form.employment_status }}
+        </div>
+        
+        <div>
+          <label>Occupation</label><br>
+          {{ form.occupation }}
+        </div>
+        
+        <div>
+          <label>Education Level</label><br>
+          {{ form.education }}
+        </div>
+        
+        <div>
+          <label>Household Size</label><br>
+          {{ form.household_size }}
+        </div>
+        
+        <div>
+          <label class="checkbox-label">
+            {{ form.has_children }}
+            Have Children
+          </label>
+        </div>
+        
+        <div>
+          <label>Monthly Income (SGD)</label><br>
+          {{ form.monthly_income }}
+        </div>
+      </div>
+    </div>
+
+    <div class="section" style="margin-top:32px;">
+      <button class="chip primary" type="submit">Complete Profile</button>
+    </div>
+  </form>
+</div>
+
+<style>
+  .subtitle { color: #6b7280; margin-bottom: 24px; }
+  .section { margin-bottom: 20px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); }
+  input, select { width: 100%; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px; }
+  .checkbox-label { display: flex; align-items: center; gap: 8px; }
+  input[type="checkbox"] { width: auto; }
+  ul { list-style: none; padding: 0; }
+  .muted { color: #6b7280; }
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
