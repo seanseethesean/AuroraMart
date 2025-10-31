@@ -1,21 +1,24 @@
 {% load static %}
 
 <nav class="nav-wrap">
-    <div class="nav">
-      <div class="brand">
-        <img src="{% static 'storefront/images/Logo.png' %}" alt="AuroraMart logo" class="logo-img">
-        <a href="{% url 'storefront:home' %}"><h1 class="wordmark">AuroraMart</h1></a>
-      </div>
-      <div class="nav-links">
-        <a class="chip" href="{% url 'storefront:product_list' %}">Shop</a>
-        <a class="chip" href="{% url 'storefront:cart_view' %}">Cart</a>
-        {% if user.is_authenticated %}
-          <a class="chip" href="{% url 'storefront:recommendations' %}">For You</a>
-          <a class="chip" href="{% url 'storefront:logout' %}">Logout</a>
-        {% else %}
-          <a class="chip primary" href="{% url 'storefront:login' %}">Login</a>
-          <a class="chip" href="{% url 'storefront:register' %}">Sign Up</a>
-        {% endif %}
-      </div>
+  <div class="nav">
+    <a class="brand" href="{% url 'storefront:home' %}" aria-label="AuroraMart home">
+      <img class="logo-img" src="{% static 'storefront/images/Logo.png' %}" alt="AuroraMart"/>
+    </a>
+    <div class="nav-links">
+      <a class="chip" href="{% url 'storefront:product_list' %}">Shop</a>
+      <a class="chip" href="{% url 'storefront:cart_view' %}">Cart</a>
+      {% if user.is_authenticated %}
+      <a class="chip" href="{% url 'storefront:recommendations' %}">For You</a>
+      <!-- <a class="chip" href="{% url 'storefront:logout' %}">Logout</a> -->
+      <form action="{% url 'storefront:logout' %}" method="post" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="chip" style="background:none;border:none;padding:0;">Logout</button>
+      </form>
+      {% else %}
+      <a class="chip primary" href="{% url 'storefront:login' %}">Login</a>
+      <a class="chip" href="{% url 'storefront:register' %}">Sign Up</a>
+      {% endif %}
     </div>
-  </nav>  
+  </div>
+</nav>
