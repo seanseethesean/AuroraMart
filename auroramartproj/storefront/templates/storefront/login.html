@@ -1,18 +1,44 @@
 {% extends "storefront/base.html" %}
+
 {% block title %}Login — AuroraMart{% endblock %}
+
+{% block extra_head %}
+<style>
+  .auth-card{max-width:420px;margin:32px auto;padding:20px;border:1px solid #e5e7eb;border-radius:12px;background:#fff}
+  .auth-card h2{margin:0 0 12px 0}
+  .section{margin-bottom:14px}
+  .chip.primary{padding:10px 14px;border-radius:8px;background:#111827;color:#fff;border:1px solid #111827}
+  .link{color:#0ea5e9;text-decoration:none}
+</style>
+{% endblock %}
+
 {% block content %}
-<h2>Login</h2>
-<form method="post">
-  {% csrf_token %}
-  <div class="section">
-    <label>Username</label><br>
-    <input type="text" name="username" required>
-  </div>
-  <div class="section">
-    <label>Password</label><br>
-    <input type="password" name="password" required>
-  </div>
-  <button class="chip primary" type="submit">Login</button>
-</form>
-<p>Don't have an account? <a href="{% url 'storefront:register' %}">Register here</a>.</p>
+<div class="auth-card">
+  <h2>Login</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="section">
+      <label>Username</label><br>
+      <input type="text" name="username" required>
+    </div>
+    <div class="section">
+      <label>Password</label><br>
+      <input type="password" name="password" required>
+    </div>
+    <button class="chip primary" type="submit">Login</button>
+  </form>
+  <p>Don't have an account? Register
+    <a href="{% url 'storefront:register' %}" class="link">here</a>.
+  </p>
+</div>
+{% endblock %}
+
+{% block extra_body %}
+<script>
+  // Optional: autofocus username
+  document.addEventListener('DOMContentLoaded', () => {
+    const el = document.querySelector('input[name="username"]');
+    if (el) el.focus();
+  });
+</script>
 {% endblock %}

@@ -165,7 +165,7 @@ footer {
 }
 .grid.section .card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 8px 24px rgba(16,24,40,0.08);
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.08);
 }
 .grid.section .card img {
   width: 100%;
@@ -185,3 +185,28 @@ footer {
   display: block;
 }
 
+.link {
+  color: #2563eb; /* blue */
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.link:hover {
+  color: #1d4ed8; /* darker blue on hover */
+}
+
+/* Login form spacing */
+.section {
+  /* space between Username and Password boxes */
+  margin-bottom: 16px;
+}
+
+form button.chip.primary {
+  /* space above the Login button */
+  margin-top: 8px;
+}
+
+form + p {
+  /* space between the form and the "Don't have..." line */
+  margin-top: 16px;
+}

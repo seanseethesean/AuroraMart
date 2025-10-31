@@ -15,6 +15,6 @@ urlpatterns = [
     path('order/placed/<int:order_id>/', views.order_placed, name='order_placed'),
     path('recommendations/', views.recommendations, name='recommendations'),
     path('login/',  auth_views.LoginView.as_view(template_name='storefront/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='storefront:home'), name='logout'),
     path('register/', views.register, name='register'),
 ]
