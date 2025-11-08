@@ -1,31 +1,59 @@
 {% extends "storefront/base.html" %}
 {% block title %}Register — AuroraMart{% endblock %}
 
+{% block extra_head %}
+<style>
+  .auth-card{max-width:460px;margin:32px auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px;background:#fff}
+  .auth-card h2{margin:0 0 12px 0}
+  .section{margin-bottom:16px}
+  .chip.primary{padding:10px 14px;border-radius:8px;background:#111827;color:#fff;border:1px solid #111827}
+  .form-control{width:100%;padding:10px;border-radius:8px;border:1px solid #d1d5db}
+  .error-message{background:#fee2e2;color:#b91c1c;padding:12px;border-radius:8px;margin-bottom:16px}
+  .field-errors{color:#b91c1c;font-size:0.875rem;margin-top:6px}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="auth-card">
   <h2>Create an Account</h2>
-  {% if form.errors %}
+  {% if form.non_field_errors %}
     <div class="error-message">
-      {% for field, errors in form.errors.items %}
-        {% for error in errors %}
-          {{ error }}
-        {% endfor %}
+      {% for error in form.non_field_errors %}
+        {{ error }}
       {% endfor %}
     </div>
   {% endif %}
-  <form method="post">
+  <form method="post" novalidate>
     {% csrf_token %}
     <div class="section">
       <label>Username (minimum 3 characters)</label><br>
       {{ form.username }}
+      {% for error in form.username.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+    </div>
+    <div class="section">
+      <label>First Name</label><br>
+      {{ form.first_name }}
+      {% for error in form.first_name.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+    </div>
+    <div class="section">
+      <label>Last Name</label><br>
+      {{ form.last_name }}
+      {% for error in form.last_name.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+    </div>
+    <div class="section">
+      <label>Email</label><br>
+      {{ form.email }}
+      {% for error in form.email.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
     </div>
     <div class="section">
       <label>Password (minimum 8 characters)</label><br>
       {{ form.password1 }}
+      {% for error in form.password1.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
     </div>
     <div class="section">
       <label>Confirm Password</label><br>
       {{ form.password2 }}
+      {% for error in form.password2.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
     </div>
     <button class="chip primary auth-button" type="submit">Sign Up</button>
   </form>

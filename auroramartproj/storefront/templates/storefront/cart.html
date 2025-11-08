@@ -11,6 +11,7 @@
         {% endif %}
         <div style="flex:1">
           <strong>{{ item.product.name }}</strong><br>
+          <small class="muted">In stock: {{ item.product.stock }}</small>
           <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
             <form method="post" action="{% url 'storefront:cart_update' item.product.id %}">
               {% csrf_token %}
@@ -19,7 +20,7 @@
             </form>
             <form method="post" action="{% url 'storefront:cart_update' item.product.id %}">
               {% csrf_token %}
-              <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="quantity-input" style="width:64px; text-align:center; padding:6px; border-radius:6px; border:1px solid #e6eaf2;">
+              <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" class="quantity-input" style="width:64px; text-align:center; padding:6px; border-radius:6px; border:1px solid #e6eaf2;">
               <button class="chip" type="submit">Update</button>
             </form>
             <form method="post" action="{% url 'storefront:cart_update' item.product.id %}">

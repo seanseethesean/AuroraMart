@@ -1,11 +1,18 @@
 {% load static %}
 
 <nav class="nav-wrap">
+  <style>
+    /* Slightly larger navbar logo for better visibility */
+    .logo-img { width: 56px; height: auto; display: inline-block; }
+    @media (max-width: 640px) { .logo-img { width: 48px; } }
+  </style>
   <div class="nav">
-    <a class="brand" href="{% url 'storefront:home' %}" aria-label="AuroraMart home">
+    <div class="brand" role="img" aria-label="AuroraMart">
       <img class="logo-img" src="{% static 'storefront/images/Logo.png' %}" alt="AuroraMart"/>
-    </a>
+    </div>
     <div class="nav-links">
+      <a class="chip {% if request.resolver_match.view_name == 'storefront:home' %}active{% endif %}"
+         href="{% url 'storefront:home' %}">Home</a>
       <a class="chip {% if request.resolver_match.view_name == 'storefront:product_list' %}active{% endif %}" 
          href="{% url 'storefront:product_list' %}">Shop</a>
       <a class="chip {% if request.resolver_match.view_name == 'storefront:cart_view' %}active{% endif %}" 
@@ -13,6 +20,8 @@
       {% if user.is_authenticated %}
       <a class="chip {% if request.resolver_match.view_name == 'storefront:recommendations' %}active{% endif %}" 
          href="{% url 'storefront:recommendations' %}">For You</a>
+    <a class="chip {% if request.resolver_match.view_name == 'storefront:profile' %}active{% endif %}" 
+      href="{% url 'storefront:profile' %}">Profile</a>
       <form action="{% url 'storefront:logout' %}" method="post" style="display:inline;">
         {% csrf_token %}
         <button type="submit" class="chip">Logout</button>

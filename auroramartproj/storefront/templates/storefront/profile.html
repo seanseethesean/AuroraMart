@@ -1,0 +1,54 @@
+{% extends "storefront/base.html" %}
+{% block title %}Your Profile — AuroraMart{% endblock %}
+{% block content %}
+<h2>Update Profile</h2>
+<p class="muted">Keep your contact information and preferences up to date so we can personalise your experience.</p>
+<form method="post" class="card" style="padding:24px;">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="form-grid">
+    <div class="form-field">{{ form.email.label_tag }}{{ form.email }}{{ form.email.errors }}</div>
+    <div class="form-field">{{ form.first_name.label_tag }}{{ form.first_name }}{{ form.first_name.errors }}</div>
+    <div class="form-field">{{ form.last_name.label_tag }}{{ form.last_name }}{{ form.last_name.errors }}</div>
+    <div class="form-field">{{ form.phone.label_tag }}{{ form.phone }}{{ form.phone.errors }}</div>
+    <div class="form-field">{{ form.address.label_tag }}{{ form.address }}{{ form.address.errors }}</div>
+    <div class="form-field">{{ form.age.label_tag }}{{ form.age }}{{ form.age.errors }}</div>
+    <div class="form-field">{{ form.gender.label_tag }}{{ form.gender }}{{ form.gender.errors }}</div>
+    <div class="form-field">{{ form.employment_status.label_tag }}{{ form.employment_status }}{{ form.employment_status.errors }}</div>
+    <div class="form-field">{{ form.occupation.label_tag }}{{ form.occupation }}{{ form.occupation.errors }}</div>
+  <div class="form-field">{{ form.education.label_tag }}{{ form.education }}{{ form.education.errors }}</div>
+  <div class="form-field">{{ form.household_size.label_tag }}{{ form.household_size }}{{ form.household_size.errors }}</div>
+    <div class="form-field checkbox">
+      {{ form.has_children.label_tag }}
+      {{ form.has_children }}
+      {{ form.has_children.errors }}
+    </div>
+  <div class="form-field">{{ form.monthly_income.label_tag }}{{ form.monthly_income }}{{ form.monthly_income.errors }}</div>
+  </div>
+  <fieldset class="pref-fieldset">
+    <legend>Preferred Categories</legend>
+    <p class="muted" style="margin-top:-8px;">{{ form.preferred_categories.help_text }}</p>
+    {{ form.preferred_categories.errors }}
+    <div class="checkbox-grid">
+      {% for checkbox in form.preferred_categories %}
+        <label class="checkbox-option">{{ checkbox.tag }} {{ checkbox.choice_label }}</label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  <button type="submit" class="chip primary" style="margin-top:16px;">Save changes</button>
+</form>
+{% endblock %}
+{% block extra_head %}
+<style>
+  .form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-bottom:16px; }
+  .form-field label { display:block; font-weight:600; margin-bottom:6px; }
+  .form-field input, .form-field select, .form-field textarea { width:100%; }
+  .pref-fieldset { border:1px solid #e2e8f0; padding:16px; border-radius:12px; margin-top:8px; }
+  .checkbox-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px; margin-top:12px; }
+  .checkbox-option { display:flex; align-items:center; gap:8px; }
+  .checkbox-option input { width:auto; }
+  .checkbox.form-field { display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
+  .checkbox.form-field label { margin-bottom:0; font-weight:600; }
+  .checkbox.form-field input { width:auto; }
+</style>
+{% endblock %}

@@ -6,17 +6,6 @@
   <h2>Products</h2>
   <a href="{% url 'adminpanel:add_product' %}" class="btn btn-accent">Add Product</a>
 </div>
-
-{% if messages %}
-<div class="mb-3">
-  {% for message in messages %}
-    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}">
-      {{ message }}
-    </div>
-  {% endfor %}
-</div>
-{% endif %}
-
 <div class="card">
   <div class="card-body">
     <table class="table">

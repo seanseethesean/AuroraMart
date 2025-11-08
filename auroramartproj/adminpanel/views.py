@@ -13,6 +13,8 @@ from django.contrib.auth.models import User
 from storefront.models import OrderItem
 from django import forms
 
+staff_required = staff_member_required(login_url='adminpanel:login')
+
 
 # Simple forms for customer create/edit and password reset
 class CustomerForm(forms.Form):
@@ -62,7 +64,7 @@ def logout_view(request):
     return redirect(reverse("adminpanel:login"))
 
 
-@staff_member_required
+@staff_required
 def dashboard(request):
     product_count = Product.objects.count()
     customer_count = Customer.objects.count()
@@ -78,13 +80,13 @@ def dashboard(request):
     return render(request, "adminpanel/dashboard.html", context)
 
 
-@staff_member_required
+@staff_required
 def product_list(request):
     products = Product.objects.all()
     return render(request, "adminpanel/product/product_list.html", {"products": products})
 
 
-@staff_member_required
+@staff_required
 def add_product(request):
     """Add new product. Staff-only."""
     if request.method == "POST":
@@ -102,7 +104,7 @@ def add_product(request):
     })
 
 
-@staff_member_required
+@staff_required
 def edit_product(request, pk):
     product = get_object_or_404(Product, pk=pk)
     if request.method == "POST":
@@ -121,7 +123,7 @@ def edit_product(request, pk):
     })
 
 
-@staff_member_required
+@staff_required
 def delete_product(request, pk):
     product = get_object_or_404(Product, pk=pk)
     if request.method == "POST":
@@ -132,19 +134,19 @@ def delete_product(request, pk):
     return render(request, "adminpanel/product/product_confirm_delete.html", {"product": product})
 
 
-@staff_member_required
+@staff_required
 def customer_list(request):
     customers = Customer.objects.select_related("user").all()
     return render(request, "adminpanel/customer/customer_list.html", {"customers": customers})
 
 
-@staff_member_required
+@staff_required
 def customer_detail(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
     return render(request, "adminpanel/customer/customer_detail.html", {"customer": customer})
 
 
-@staff_member_required
+@staff_required
 def toggle_customer(request, pk):
     if request.method != "POST":
         return redirect("adminpanel:customer_list")
@@ -163,7 +165,7 @@ def toggle_customer(request, pk):
     return redirect("adminpanel:customer_list")
 
 
-@staff_member_required
+@staff_required
 def order_list(request):
     # Allow filtering by customer id and product id via GET params
     customer_id = request.GET.get('customer')
@@ -176,14 +178,14 @@ def order_list(request):
     return render(request, 'adminpanel/order/order_list.html', {'orders': orders, 'customer_id': customer_id, 'product_id': product_id})
 
 
-@staff_member_required
+@staff_required
 def order_detail(request, pk):
     order = get_object_or_404(Order, pk=pk)
     items = order.items.select_related('product')
     return render(request, 'adminpanel/order/order_detail.html', {'order': order, 'items': items})
 
 
-@staff_member_required
+@staff_required
 def customer_create(request):
     if request.method == 'POST':
         form = CustomerForm(request.POST)
@@ -198,7 +200,7 @@ def customer_create(request):
     return render(request, 'adminpanel/customer/customer_form.html', {'form': form, 'title': 'Create Customer'})
 
 
-@staff_member_required
+@staff_required
 def customer_edit(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
     if request.method == 'POST':
@@ -232,7 +234,7 @@ def customer_edit(request, pk):
     return render(request, 'adminpanel/customer/customer_form.html', {'form': form, 'title': 'Edit Customer', 'customer': customer})
 
 
-@staff_member_required
+@staff_required
 def customer_delete(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
     if request.method == 'POST':
@@ -243,7 +245,7 @@ def customer_delete(request, pk):
     return render(request, 'adminpanel/customer/customer_confirm_delete.html', {'customer': customer})
 
 
-@staff_member_required
+@staff_required
 def customer_reset_password(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
     if request.method == 'POST':
@@ -259,7 +261,7 @@ def customer_reset_password(request, pk):
     return render(request, 'adminpanel/customer/customer_reset_password.html', {'form': form, 'customer': customer})
 
 
-@staff_member_required
+@staff_required
 def customer_orders(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
     orders = Order.objects.filter(user=customer.user).order_by('-date_ordered')
