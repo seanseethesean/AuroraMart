@@ -43,6 +43,7 @@
   .section{margin-top:36px}
   .section h2{font-size:22px;margin:0 0 12px 0}
   .grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+  .grid.category-grid{grid-template-columns:repeat(4,minmax(0,1fr));}
   .card{background:var(--card);border:1px solid #e6eaf2;border-radius:12px;padding:14px;text-align:center}
   .card:hover{border-color:#c9d3e6;transform:translateY(-1px)}
   .card small{display:block;color:var(--muted);margin-top:6px}
@@ -93,13 +94,13 @@
 
 <section class="section">
   <h2>Browse by category</h2>
-  <div class="grid">
-    <a class="card" href="{% url 'storefront:product_list' %}?cat=electronics">Electronics <small>Headphones, peripherals, gadgets</small></a>
-    <a class="card" href="{% url 'storefront:product_list' %}?cat=fashion">Fashion <small>Men, Women</small></a>
-    <a class="card" href="{% url 'storefront:product_list' %}?cat=home">Home &amp; Kitchen <small>Cookware, storage</small></a>
-    <a class="card" href="{% url 'storefront:product_list' %}?cat=beauty">Beauty <small>Skincare, personal care</small></a>
-    <a class="card" href="{% url 'storefront:product_list' %}?cat=sports">Sports &amp; Outdoors <small>Fitness, hiking</small></a>
-    <a class="card" href="{% url 'storefront:product_list' %}?cat=books">Books <small>Bestsellers, non-fiction</small></a>
+  <div class="grid category-grid">
+    {% for card in category_cards %}
+      <a class="card" href="{% url 'storefront:product_list' %}?cat={{ card.slug }}">
+        {{ card.label }}
+        <small>{{ card.tagline }}</small>
+      </a>
+    {% endfor %}
   </div>
 </section>
 

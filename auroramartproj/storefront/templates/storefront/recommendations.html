@@ -2,7 +2,11 @@
 {% block title %}Recommended For You — AuroraMart{% endblock %}
 {% block content %}
 <h2>Recommended For You</h2>
-<p class="muted">Based on your browsing and purchase history.</p>
+{% if inferred_category %}
+  <p class="muted">We think you might enjoy more from <strong>{{ inferred_category }}</strong>. Here are a few picks.</p>
+{% else %}
+  <p class="muted">Based on your browsing and purchase history.</p>
+{% endif %}
 
 <div class="grid section">
   {% for product in recommended_products %}
@@ -11,7 +15,20 @@
       <small>${{ product.price }}</small>
     </a>
   {% empty %}
-    <p>No recommendations available at the moment.</p>
+    <p>No recommendations available at the moment. Add more items to your cart or update your preferences to help us learn what you like.</p>
   {% endfor %}
 </div>
+
+{% if recommendations and not ml_based %}
+  <div class="section" style="margin-top:24px;">
+    <h3 class="muted" style="font-size:1rem;">Why these items?</h3>
+    <ul>
+      {% for rec in recommendations %}
+        {% if rec.product %}
+          <li>{{ rec.product.name }}{% if rec.reason %} — {{ rec.reason }}{% endif %}</li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
 {% endblock %}

@@ -68,6 +68,23 @@
     </nav>
 
     <main class="flex-grow-1 p-4">
+      {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          {% with tags=message.tags %}
+            {% if 'error' in tags or 'danger' in tags %}
+              <div class="alert alert-danger" role="alert">{{ message }}</div>
+            {% elif 'warning' in tags %}
+              <div class="alert alert-warning" role="alert">{{ message }}</div>
+            {% elif 'success' in tags %}
+              <div class="alert alert-success" role="alert">{{ message }}</div>
+            {% else %}
+              <div class="alert alert-info" role="alert">{{ message }}</div>
+            {% endif %}
+          {% endwith %}
+        {% endfor %}
+      </div>
+      {% endif %}
       {% block content %}{% endblock %}
     </main>
   </div>
