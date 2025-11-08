@@ -1,0 +1,26 @@
+# Python/Django defaults
+*.pyc
+__pycache__/
+.pytest_cache/
+.env
+env/
+venv/
+
+# Static and media
+/media/
+/staticfiles/
+
+# Node and build artifacts
+node_modules/
+dist/
+
+# ML data and notebooks
+# Keep the folder but ignore all files inside; allow .gitkeep so folder stays in the repo
+/ml_data/*
+!/ml_data/.gitkeep
+
+# If you choose to store models in adminpanel/mlmodels, ignore joblib artifacts
+/adminpanel/mlmodels/*.joblib
+
+# Notebook outputs
+*.ipynb_checkpoints
