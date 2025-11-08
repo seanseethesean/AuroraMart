@@ -16,7 +16,7 @@ class OnboardingForm(forms.ModelForm):
             'household_size', 'has_children', 'monthly_income'
         ]
         widgets = {
-            'age': forms.NumberInput(attrs={'class': 'form-control'}),
+            'age': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
             'gender': forms.Select(attrs={'class': 'form-control'}),
             'employment_status': forms.Select(attrs={'class': 'form-control'}),
             'occupation': forms.TextInput(attrs={'class': 'form-control'}),
@@ -31,3 +31,18 @@ class OnboardingForm(forms.ModelForm):
         if categories and len(categories) != 3:
             raise forms.ValidationError("Please select exactly 3 categories.")
         return ','.join(categories)  # Store as comma-separated string
+
+    def clean_age(self):
+        """Ensure age is a reasonable non-negative integer."""
+        age = self.cleaned_data.get('age')
+        if age in (None, ''):
+            return age
+        try:
+            age_int = int(age)
+        except (ValueError, TypeError):
+            raise forms.ValidationError("Please enter a valid age.")
+        if age_int < 0:
+            raise forms.ValidationError("Age cannot be negative.")
+        if age_int > 120:
+            raise forms.ValidationError("Please enter a realistic age.")
+        return age_int

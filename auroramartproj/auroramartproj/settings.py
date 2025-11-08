@@ -120,19 +120,22 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
+# Directory where ML artifacts (joblib models, trained data CSVs) will be placed.
+# Create this folder at the project root and drop your provided joblib/csv files there.
+ML_MODELS_DIR = BASE_DIR / 'ml_models'
+ML_DATA_DIR = BASE_DIR / 'ml_data'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Authentication
-LOGIN_URL = 'storefront:login'
-LOGIN_REDIRECT_URL = 'storefront:home'
-LOGOUT_REDIRECT_URL = 'storefront:home'
-
-LOGIN_URL = '/adminpanel/login/'
-LOGIN_REDIRECT_URL = '/adminpanel/'
-LOGOUT_REDIRECT_URL = '/adminpanel/login/'
+# Redirect users to the storefront home after login/logout by default.
+# Use explicit URL paths so Django always has a concrete redirect target.
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
