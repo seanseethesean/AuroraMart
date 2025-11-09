@@ -4,6 +4,32 @@ from django.contrib.auth.models import User
 from adminpanel.models import Customer
 
 
+CATEGORY_LABEL_LOOKUP = {label.lower(): slug for slug, label in Customer.CATEGORIES}
+LEGACY_CATEGORY_MAP = {
+    'hair': 'beauty_personal_care',
+    'hair & beauty': 'beauty_personal_care',
+    'beauty & personal care': 'beauty_personal_care',
+    'fashion': 'fashion_women',
+    'sports': 'sports_outdoors',
+    'home': 'home_kitchen',
+    'groceries': 'groceries_gourmet',
+    'toys': 'toys_games',
+    'others': 'other',
+}
+
+
+def _canonicalize_category(value: str | None) -> str | None:
+    if not value:
+        return value
+    key = value.strip()
+    lowered = key.lower()
+    if key in CATEGORY_LABEL_LOOKUP.values():
+        return key
+    if lowered in CATEGORY_LABEL_LOOKUP:
+        return CATEGORY_LABEL_LOOKUP[lowered]
+    return LEGACY_CATEGORY_MAP.get(lowered, key)
+
+
 class RegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={'class': 'form-control'}))
     first_name = forms.CharField(required=True, max_length=150, widget=forms.TextInput(attrs={'class': 'form-control'}))
@@ -56,7 +82,13 @@ class OnboardingForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         customer = self.instance
         if customer and customer.preferred_categories:
-            self.initial['preferred_categories'] = [c.strip() for c in customer.preferred_categories.split(',') if c]
+            self.initial['preferred_categories'] = [
+                cat for cat in (
+                    _canonicalize_category(c.strip())
+                    for c in customer.preferred_categories.split(',')
+                    if c
+                ) if cat
+            ]
 
     def clean_preferred_categories(self):
         categories = self.cleaned_data.get('preferred_categories')
@@ -64,7 +96,8 @@ class OnboardingForm(forms.ModelForm):
             raise forms.ValidationError("Please select at least one category.")
         if len(categories) > 3:
             raise forms.ValidationError("Select no more than 3 categories.")
-        return ','.join(categories)  # Store as comma-separated string
+        canonical = [_canonicalize_category(cat) for cat in categories]
+        return ','.join([cat for cat in canonical if cat])  # Store as comma-separated string
 
     def clean_age(self):
         """Ensure age is a reasonable non-negative integer."""
@@ -116,7 +149,13 @@ class ProfileUpdateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         customer = self.instance
         if customer and customer.preferred_categories:
-            self.initial['preferred_categories'] = [c.strip() for c in customer.preferred_categories.split(',') if c]
+            self.initial['preferred_categories'] = [
+                cat for cat in (
+                    _canonicalize_category(c.strip())
+                    for c in customer.preferred_categories.split(',')
+                    if c
+                ) if cat
+            ]
         if customer and customer.user:
             self.initial.setdefault('email', customer.user.email)
             self.initial.setdefault('first_name', customer.user.first_name)
@@ -128,7 +167,8 @@ class ProfileUpdateForm(forms.ModelForm):
             raise forms.ValidationError("Please select at least one category.")
         if len(categories) > 3:
             raise forms.ValidationError("Select no more than 3 categories.")
-        return ','.join(categories)
+        canonical = [_canonicalize_category(cat) for cat in categories]
+        return ','.join([cat for cat in canonical if cat])
 
     def clean_age(self):
         age = self.cleaned_data.get('age')

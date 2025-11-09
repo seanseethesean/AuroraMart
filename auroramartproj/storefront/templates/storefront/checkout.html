@@ -27,4 +27,22 @@
   </div>
   <button class="chip primary" type="submit">Place Order</button>
 </form>
+
+{% if complete_the_set %}
+  <div class="section" style="margin-top:24px;">
+    <h3>Complete the set</h3>
+    <p class="muted">Customers frequently add these alongside the items in your cart.</p>
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+      {% for rec in complete_the_set %}
+        <a class="card" href="{% url 'storefront:product_detail' rec.id %}">
+          {% if rec.image %}
+            <img src="{{ rec.image.url }}" alt="{{ rec.name }}" style="width:100%; height:140px; object-fit:cover; border-radius:8px; margin-bottom:8px;">
+          {% endif %}
+          <strong>{{ rec.name }}</strong>
+          <small class="text-muted">${{ rec.price }}</small>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
 {% endblock %}

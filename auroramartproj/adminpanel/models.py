@@ -6,25 +6,33 @@ import os
 
 
 PRODUCT_CATEGORY_CHOICES = [
-    ('electronics', 'Electronics'),
-    ('hair', 'Hair & Beauty'),
-    ('fashion', 'Fashion'),
-    ('sports', 'Sports & Outdoors'),
-    ('home', 'Home & Kitchen'),
+    ('automotive', 'Automotive'),
+    ('beauty_personal_care', 'Beauty & Personal Care'),
     ('books', 'Books'),
-    ('groceries', 'Groceries & Gourmet'),
-    ('toys', 'Toys & Games'),
-    ('others', 'Others'),
+    ('electronics', 'Electronics'),
+    ('fashion_men', 'Fashion - Men'),
+    ('fashion_women', 'Fashion - Women'),
+    ('groceries_gourmet', 'Groceries & Gourmet'),
+    ('health', 'Health'),
+    ('home_kitchen', 'Home & Kitchen'),
+    ('pet_supplies', 'Pet Supplies'),
+    ('sports_outdoors', 'Sports & Outdoors'),
+    ('toys_games', 'Toys & Games'),
+    ('other', 'Other'),
 ]
 
 class Product(models.Model):
     CATEGORY_CHOICES = PRODUCT_CATEGORY_CHOICES
-    sku = models.CharField(max_length=50, unique=True, null=True, blank=True, help_text="Unique product identifier")
+    sku = models.CharField(max_length=50, unique=True, help_text="Unique product identifier")
     name = models.CharField(max_length=200)
     category = models.CharField(max_length=100, choices=CATEGORY_CHOICES)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)
     description = models.TextField(blank=True)
+    rating = models.DecimalField(max_digits=3, decimal_places=2, blank=True, null=True,
+                                 help_text="Average rating imported from catalogue")
+    reorder_threshold = models.PositiveIntegerField(blank=True, null=True,
+                                                    help_text="Reorder point imported from catalogue")
     _admin_images_location = os.path.join(settings.BASE_DIR, 'adminpanel', 'static', 'adminpanel', 'images')
     admin_images_fs = FileSystemStorage(location=_admin_images_location, base_url='/static/adminpanel/images/')
     image = models.ImageField(upload_to='', storage=admin_images_fs, blank=True, null=True)
@@ -84,17 +92,7 @@ class Customer(models.Model):
         ('10001+', 'Above $10,000')
     ]
     
-    CATEGORIES = [
-        ('electronics', 'Electronics'),
-        ('hair', 'Hair & Beauty'),
-        ('fashion', 'Fashion'),
-        ('sports', 'Sports & Outdoors'),
-        ('home', 'Home & Kitchen'),
-        ('books', 'Books'),
-        ('groceries', 'Groceries & Gourmet'),
-        ('toys', 'Toys & Games'),
-        ('others', 'Others'),
-    ]
+    CATEGORIES = PRODUCT_CATEGORY_CHOICES
     
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     age = models.IntegerField(null=True)

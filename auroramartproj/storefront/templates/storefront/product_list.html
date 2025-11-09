@@ -3,7 +3,7 @@
 {% block content %}
 <h2>All Products</h2>
 <form method="get" class="search">
-  <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search products...">
+  <input type="text" name="q" value="{{ request.GET.q|default_if_none:'' }}" placeholder="Search products...">
   <button type="submit">Search</button>
 </form>
 
@@ -28,4 +28,26 @@
     <p>No products found.</p>
   {% endfor %}
 </div>
+
+{% if page_obj %}
+  <div class="pagination" style="margin-top:20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+    {% if page_obj.has_previous %}
+      <a href="?{% if page_querystring %}{{ page_querystring }}&{% endif %}page={{ page_obj.previous_page_number }}" class="btn-secondary">Previous</a>
+    {% endif %}
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      {% for page in page_range %}
+        {% if page == '…' %}
+          <span class="text-muted">&hellip;</span>
+        {% elif page == page_obj.number %}
+          <span class="btn-secondary" style="pointer-events:none; font-weight:600;">{{ page }}</span>
+        {% else %}
+          <a href="?{% if page_querystring %}{{ page_querystring }}&{% endif %}page={{ page }}" class="btn-secondary">{{ page }}</a>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% if page_obj.has_next %}
+      <a href="?{% if page_querystring %}{{ page_querystring }}&{% endif %}page={{ page_obj.next_page_number }}" class="btn-secondary">Next</a>
+    {% endif %}
+  </div>
+{% endif %}
 {% endblock %}

@@ -167,15 +167,42 @@ def toggle_customer(request, pk):
 
 @staff_required
 def order_list(request):
-    # Allow filtering by customer id and product id via GET params
-    customer_id = request.GET.get('customer')
-    product_id = request.GET.get('product')
-    orders = Order.objects.all().select_related('user')
+    """List orders with optional filtering by customer id and product SKU."""
+    orders_qs = (
+        Order.objects
+        .all()
+        .select_related('user', 'user__customer')
+        .prefetch_related('items__product')
+        .order_by('-date_ordered')
+    )
+
+    customer_id = (request.GET.get('customer') or '').strip()
+    product_sku = (request.GET.get('product') or '').strip()
+
+    orders = orders_qs
     if customer_id:
-        orders = orders.filter(user__id=customer_id)
-    if product_id:
-        orders = orders.filter(items__product__id=product_id).distinct()
-    return render(request, 'adminpanel/order/order_list.html', {'orders': orders, 'customer_id': customer_id, 'product_id': product_id})
+        if customer_id.isdigit():
+            customer_pk = int(customer_id)
+            orders = orders.filter(user__customer__id=customer_pk)
+        else:
+            messages.error(request, "Customer ID must be a positive whole number.")
+
+    if product_sku:
+        orders = orders.filter(items__product__sku__iexact=product_sku).distinct()
+
+    orders = list(orders)
+    for order in orders:
+        try:
+            order.customer_profile = order.user.customer
+        except Customer.DoesNotExist:
+            order.customer_profile = None
+
+    context = {
+        'orders': orders,
+        'customer_id': customer_id,
+        'product_sku': product_sku,
+    }
+    return render(request, 'adminpanel/order/order_list.html', context)
 
 
 @staff_required

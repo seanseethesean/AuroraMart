@@ -1,0 +1,77 @@
+{% extends "storefront/base.html" %}
+{% block title %}My Orders — AuroraMart{% endblock %}
+{% block extra_head %}
+<style>
+  .orders-layout { display: grid; gap: 24px; align-items: start; }
+  .orders-stream { display: grid; gap: 24px; }
+  .order-card { padding: 20px; }
+  .order-header { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 12px; }
+  .order-header .status-badge { background: #e0f2fe; color: #0369a1; font-weight: 600; padding: 4px 10px; border-radius: 999px; font-size: 0.85rem; }
+  .order-placed { color: #6b7280; font-size: 0.9rem; margin-bottom: 16px; }
+  .progress-track { background: #e5e7eb; height: 6px; border-radius: 999px; overflow: hidden; margin-bottom: 12px; }
+  .progress-value { height: 100%; background: #0ea5e9; transition: width 0.3s ease; width: calc(var(--progress, 0) * 1%); }
+  .status-steps { list-style: none; display: flex; justify-content: space-between; padding: 0; margin: 0 0 16px; font-size: 0.85rem; color: #6b7280; }
+  .status-steps li { flex: 1; text-align: center; padding-bottom: 6px; border-bottom: 2px solid #e5e7eb; }
+  .status-steps li.active { border-color: #0ea5e9; color: #0ea5e9; font-weight: 600; }
+  .order-items { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 8px; }
+  .order-items li { display: flex; justify-content: space-between; font-size: 0.95rem; }
+  .order-meta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: baseline; margin-bottom: 16px; font-size: 0.95rem; }
+  .order-actions { display: flex; gap: 12px; }
+</style>
+{% endblock %}
+{% block content %}
+<section class="orders-layout">
+  <header>
+    <h1 style="margin-bottom:12px;">My Orders</h1>
+    <p class="text-muted" style="margin:0;">Track your deliveries and confirm when orders arrive at your doorstep.</p>
+  </header>
+  <div class="orders-stream">
+      {% if orders_payload %}
+        {% for entry in orders_payload %}
+          <article class="card order-card">
+            <div class="order-header">
+              <h2 style="margin:0; font-size:1.2rem;">Order #{{ entry.order.id }}</h2>
+              <span class="status-badge">{{ entry.order.status }}</span>
+            </div>
+            <p class="order-placed">Placed {{ entry.order.date_ordered|date:"M j, Y • H:i" }}</p>
+            <div class="progress-track" aria-hidden="true">
+              <div class="progress-value" style="--progress: {{ entry.progress_percent|default:0 }};"></div>
+            </div>
+            <ol class="status-steps">
+              {% for status in status_sequence %}
+                <li class="{% if forloop.counter0 <= entry.progress_index %}active{% endif %}">{{ status }}</li>
+              {% endfor %}
+            </ol>
+            <ul class="order-items">
+              {% for item in entry.items %}
+                <li>
+                  <span>{{ item.product.name }}</span>
+                  <span>× {{ item.quantity }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+            <div class="order-meta">
+              <span>Total: ${{ entry.order.total_price|floatformat:2 }}</span>
+              {% if entry.order.delivered_at %}
+                <span>Delivered {{ entry.order.delivered_at|date:"M j, Y • H:i" }}</span>
+              {% endif %}
+            </div>
+            {% if entry.order.status != 'Delivered' %}
+            <div class="order-actions">
+              <form method="post" action="{% url 'storefront:order_confirm_delivery' entry.order.id %}">
+                {% csrf_token %}
+                <button type="submit" class="chip primary">Confirm Delivery</button>
+              </form>
+            </div>
+            {% endif %}
+          </article>
+        {% endfor %}
+      {% else %}
+        <div class="card order-card" style="text-align:center;">
+          <p>You have not placed any orders yet.</p>
+          <a class="chip primary" href="{% url 'storefront:product_list' %}">Browse products</a>
+        </div>
+      {% endif %}
+  </div>
+</section>
+{% endblock %}

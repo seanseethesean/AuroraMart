@@ -18,6 +18,8 @@
       <a class="chip {% if request.resolver_match.view_name == 'storefront:cart_view' %}active{% endif %}" 
          href="{% url 'storefront:cart_view' %}">Cart</a>
       {% if user.is_authenticated %}
+    <a class="chip {% if request.resolver_match.view_name == 'storefront:order_list' %}active{% endif %}" 
+      href="{% url 'storefront:order_list' %}">My Orders</a>
       <a class="chip {% if request.resolver_match.view_name == 'storefront:recommendations' %}active{% endif %}" 
          href="{% url 'storefront:recommendations' %}">For You</a>
     <a class="chip {% if request.resolver_match.view_name == 'storefront:profile' %}active{% endif %}" 

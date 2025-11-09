@@ -33,4 +33,21 @@
     <p class="muted"><strong>Out of stock.</strong> Please check back soon.</p>
   {% endif %}
 </div>
+
+{% if frequently_bought %}
+<section class="section">
+  <h3>Frequently bought together</h3>
+  <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+    {% for rec in frequently_bought %}
+      <a class="card" href="{% url 'storefront:product_detail' rec.id %}">
+        {% if rec.image %}
+          <img src="{{ rec.image.url }}" alt="{{ rec.name }}" style="width:100%; height:140px; object-fit:cover; border-radius:8px; margin-bottom:8px;">
+        {% endif %}
+        <strong>{{ rec.name }}</strong>
+        <small class="text-muted">${{ rec.price }}</small>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 {% endblock %}

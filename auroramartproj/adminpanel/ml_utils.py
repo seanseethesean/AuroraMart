@@ -1,51 +1,150 @@
-import os
-import joblib
-from functools import lru_cache
-from django.apps import apps
+from __future__ import annotations
+
 import logging
+from functools import lru_cache
+from pathlib import Path
+from typing import Any, Iterable, List, Optional
+
+from collections.abc import Iterable as IterableABC
+
+import joblib
 import pandas as pd
-from typing import List, Any, Optional
 
 logger = logging.getLogger(__name__)
 
 
-@lru_cache(maxsize=1)
-def load_models() -> dict:
-    """Load and cache joblib models from adminpanel/mlmodels.
+APP_DIR = Path(__file__).resolve().parent
+MODEL_DIR_CANDIDATES = [APP_DIR / "models", APP_DIR / "mlmodels"]
+DATASETS_DIR = APP_DIR / "datasets"
+PRODUCTS_CSV_PATH = DATASETS_DIR / "products_500.csv"
 
-    Returns a dict with keys 'decision_tree' and 'association_rules'. Values may be None if file missing.
-    """
-    loaded = {'decision_tree': None, 'association_rules': None}
+
+def _normalize_token(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _key(value: Any) -> Optional[str]:
+    token = _normalize_token(value)
+    return token.upper() if token else None
+
+
+def _build_identifier_maps() -> tuple[dict[str, str], dict[str, str]]:
+    id_to_sku: dict[str, str] = {}
+    sku_to_id: dict[str, str] = {}
+
+    if not PRODUCTS_CSV_PATH.exists():
+        logger.warning("Products dataset not found at %s", PRODUCTS_CSV_PATH)
+        return id_to_sku, sku_to_id
+
     try:
-        app_path = apps.get_app_config('adminpanel').path
-        models_dir = os.path.join(app_path, 'mlmodels')
-
-        # Tolerant loader: scan for any .joblib files and map by filename keywords.
-        if os.path.isdir(models_dir):
-            for fname in os.listdir(models_dir):
-                if not fname.lower().endswith('.joblib'):
-                    continue
-                fpath = os.path.join(models_dir, fname)
-                lname = fname.lower()
-                try:
-                    if any(k in lname for k in ('customer', 'b2c', 'decision', 'tree')) and loaded['decision_tree'] is None:
-                        loaded['decision_tree'] = joblib.load(fpath)
-                        logger.info('Loaded decision tree model from %s', fpath)
-                        continue
-                    if any(k in lname for k in ('product', 'trans', 'transaction', 'association', 'assoc')) and loaded['association_rules'] is None:
-                        loaded['association_rules'] = joblib.load(fpath)
-                        logger.info('Loaded association rules model from %s', fpath)
-                        continue
-                    # fallback: if only one model present, map first to decision_tree
-                    if loaded['decision_tree'] is None and loaded['association_rules'] is None:
-                        loaded['decision_tree'] = joblib.load(fpath)
-                        logger.info('Loaded model (fallback) from %s', fpath)
-                except Exception:
-                    logger.exception('Failed loading model file %s', fpath)
-        else:
-            logger.info('Models directory does not exist: %s', models_dir)
+        df = pd.read_csv(PRODUCTS_CSV_PATH)
+    except UnicodeDecodeError:
+        try:
+            df = pd.read_csv(PRODUCTS_CSV_PATH, encoding='latin-1')
+        except Exception:
+            logger.exception("Failed reading product catalogue from %s", PRODUCTS_CSV_PATH)
+            return id_to_sku, sku_to_id
     except Exception:
-        logger.exception('Error while locating adminpanel app path for mlmodels')
+        logger.exception("Failed reading product catalogue from %s", PRODUCTS_CSV_PATH)
+        return id_to_sku, sku_to_id
+
+    column_map = {col.strip(): col for col in df.columns}
+    sku_col = next(
+        (column_map[name] for name in (
+            "sku",
+            "SKU",
+            "sku code",
+            "SKU code",
+            "Sku",
+            "Sku code",
+            "Product SKU",
+            "Product sku",
+            "Product code",
+            "product_code",
+        ) if name in column_map),
+        None,
+    )
+
+    if not sku_col:
+        logger.warning("Could not locate a SKU column in %s", PRODUCTS_CSV_PATH)
+        return id_to_sku, sku_to_id
+
+    id_col = next(
+        (column_map[name] for name in (
+            "model_id",
+            "Model ID",
+            "product_id",
+            "Product ID",
+            "id",
+            "ID",
+            "sku code",
+            "SKU code",
+        ) if name in column_map),
+        sku_col,
+    )
+
+    if id_col == sku_col:
+        series = df[sku_col].dropna()
+        for value in series:
+            model_key = _key(value)
+            sku_value = _normalize_token(value)
+            if not model_key or not sku_value:
+                continue
+            id_to_sku.setdefault(model_key, sku_value)
+            sku_key = _key(sku_value)
+            if sku_key:
+                sku_to_id.setdefault(sku_key, model_key)
+                sku_to_id.setdefault(sku_value, model_key)
+    else:
+        subset = df[[id_col, sku_col]].dropna()
+        for model_value, sku_value in subset.itertuples(index=False, name=None):
+            model_key = _key(model_value)
+            sku_text = _normalize_token(sku_value)
+            if not model_key or not sku_text:
+                continue
+            id_to_sku.setdefault(model_key, sku_text)
+            sku_key = _key(sku_text)
+            if sku_key:
+                sku_to_id.setdefault(sku_key, model_key)
+                sku_to_id.setdefault(sku_text, model_key)
+
+    return id_to_sku, sku_to_id
+
+
+ID_TO_SKU, SKU_TO_ID = _build_identifier_maps()
+
+
+@lru_cache(maxsize=1)
+def load_models() -> dict[str, Optional[Any]]:
+    """Load and cache joblib models from adminpanel/models."""
+
+    loaded: dict[str, Optional[Any]] = {'decision_tree': None, 'association_rules': None}
+    models_dir = next((path for path in MODEL_DIR_CANDIDATES if path.exists()), None)
+
+    if models_dir is None:
+        logger.warning(
+            "Model artefact directory missing. Tried: %s",
+            ", ".join(str(path) for path in MODEL_DIR_CANDIDATES),
+        )
+        return loaded
+
+    artefacts = {
+        'decision_tree': models_dir / 'decision_tree.joblib',
+        'association_rules': models_dir / 'association_rules.joblib',
+    }
+
+    for key, path in artefacts.items():
+        if not path.exists():
+            logger.warning("Expected %s artefact not found: %s", key, path)
+            continue
+        try:
+            loaded[key] = joblib.load(path)
+            logger.info("Loaded %s model from %s", key, path)
+        except Exception:
+            logger.exception("Failed loading %s model from %s", key, path)
 
     return loaded
 
@@ -140,46 +239,99 @@ def predict_preferred_category_for_customer(customer) -> Optional[Any]:
         return None
 
 
-def recommend_products_from_rules(basket_items: List[Any], top_n: int = 10) -> List[Any]:
-    """Return recommended product identifiers using the association-rules model.
+def recommend_products_from_rules(basket_items: List[Any], top_n: int = 5) -> List[str]:
+    """Return SKU recommendations derived from the association-rules model."""
 
-    The association model's API varies; this wrapper tries common patterns and returns
-    a list of SKUs/IDs (may be empty).
-    """
-    models = load_models()
-    ar = models.get('association_rules')
-    if ar is None:
+    if top_n <= 0:
         return []
 
+    model_basket: List[str] = []
+    seen_models: set[str] = set()
+    for item in basket_items:
+        key = _key(item)
+        if not key:
+            continue
+        model_id = SKU_TO_ID.get(key)
+        if not model_id or model_id in seen_models:
+            continue
+        seen_models.add(model_id)
+        model_basket.append(model_id)
+
+    if not model_basket:
+        return []
+
+    ar_model = load_models().get('association_rules')
+    if ar_model is None:
+        return []
+
+    candidate_ids = _invoke_rules_model(ar_model, model_basket, top_n=top_n * 2)
+
+    recommendations: List[str] = []
+    seen_skus: set[str] = set()
+    for candidate in candidate_ids:
+        key = _key(candidate)
+        if not key:
+            continue
+        sku = ID_TO_SKU.get(key)
+        if not sku or sku in seen_skus:
+            continue
+        seen_skus.add(sku)
+        recommendations.append(sku)
+        if len(recommendations) >= top_n:
+            break
+
+    return recommendations
+
+
+def _invoke_rules_model(model: Any, model_basket: List[str], top_n: int) -> List[str]:
     try:
-        # try a recommend method
-        if hasattr(ar, 'recommend'):
+        if hasattr(model, 'recommend'):
             try:
-                return ar.recommend(basket_items, top_n=top_n)
+                result = model.recommend(model_basket, top_n=top_n)
             except TypeError:
-                return ar.recommend(basket_items)
+                result = model.recommend(model_basket)
+            return list(_iter_tokens(result))
 
-        # try predict
-        if hasattr(ar, 'predict'):
-            return list(ar.predict([basket_items]))
+        if hasattr(model, 'predict'):
+            predicted = model.predict([model_basket])
+            if isinstance(predicted, (list, tuple)) and predicted:
+                predicted = predicted[0]
+            return list(_iter_tokens(predicted))
 
-        # if it's a DataFrame-like object, attempt simple rule lookup
-        try:
-            if isinstance(ar, pd.DataFrame):
-                recs = []
-                for item in basket_items:
-                    matched = ar[ar['antecedents'].apply(lambda a: item in a if hasattr(a, '__iter__') else False)]
-                    for conseq in matched['consequents']:
-                        for c in (conseq if hasattr(conseq, '__iter__') else [conseq]):
-                            if c not in recs:
-                                recs.append(c)
-                            if len(recs) >= top_n:
-                                return recs
-                return recs
-        except Exception:
-            pass
+        if isinstance(model, pd.DataFrame):
+            tokens: List[str] = []
+            antecedent_col = 'antecedents'
+            consequent_col = 'consequents'
+            if antecedent_col in model.columns and consequent_col in model.columns:
+                basket_set = set(model_basket)
+                for _, row in model.iterrows():
+                    antecedents = row[antecedent_col]
+                    if isinstance(antecedents, IterableABC) and not isinstance(antecedents, (str, bytes)):
+                        antecedent_values = {str(a).strip() for a in antecedents}
+                    else:
+                        antecedent_values = set()
+                    if antecedent_values and not antecedent_values.issubset(basket_set):
+                        continue
+                    tokens.extend(_iter_tokens(row[consequent_col]))
+                    if len(tokens) >= top_n:
+                        break
+            return tokens
 
     except Exception:
         logger.exception('Association rules recommendation failed')
 
     return []
+
+
+def _iter_tokens(value: Any) -> Iterable[str]:
+    if value is None:
+        return []
+    if isinstance(value, pd.Series):
+        return _iter_tokens(value.tolist())
+    if isinstance(value, (list, tuple, set, frozenset)):
+        tokens: List[str] = []
+        for item in value:
+            tokens.extend(list(_iter_tokens(item)))
+        return tokens
+    token = _normalize_token(value)
+    return [token] if token else []

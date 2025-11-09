@@ -20,8 +20,8 @@
             </form>
             <form method="post" action="{% url 'storefront:cart_update' item.product.id %}">
               {% csrf_token %}
-              <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" class="quantity-input" style="width:64px; text-align:center; padding:6px; border-radius:6px; border:1px solid #e6eaf2;">
-              <button class="chip" type="submit">Update</button>
+              <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" class="quantity-input" style="width:64px; text-align:center; padding:6px; border-radius:6px; border:1px solid #e6eaf2;" onchange="this.form.submit()">
+              <noscript><button class="chip" type="submit">Update</button></noscript>
             </form>
             <form method="post" action="{% url 'storefront:cart_update' item.product.id %}">
               {% csrf_token %}
@@ -44,6 +44,23 @@
     <p><strong>Total: </strong>${{ total }}</p>
     <a class="chip primary" href="{% url 'storefront:checkout' %}">Proceed to Checkout</a>
   </div>
+  {% if complete_the_set %}
+  <div class="section">
+    <h3>Complete the set</h3>
+    <p class="muted">Customers often add these to the same basket.</p>
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+      {% for rec in complete_the_set %}
+      <a class="card" href="{% url 'storefront:product_detail' rec.id %}">
+        {% if rec.image %}
+          <img src="{{ rec.image.url }}" alt="{{ rec.name }}" style="width:100%; height:140px; object-fit:cover; border-radius:8px; margin-bottom:8px;">
+        {% endif %}
+        <strong>{{ rec.name }}</strong>
+        <small class="text-muted">${{ rec.price }}</small>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 {% else %}
   <p>Your cart is empty. <a href="{% url 'storefront:product_list' %}">Shop now</a>.</p>
 {% endif %}

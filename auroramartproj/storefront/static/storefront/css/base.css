@@ -1,0 +1,64 @@
+:root {
+  --bg-page: #f6f8fb;
+  --bg-hero: #ffffff;
+  --text-strong: #0f172a;
+  --text-body: #334155;
+}
+
+body {
+  background: var(--bg-page);
+  color: var(--text-body);
+}
+
+.hero {
+  background: linear-gradient(135deg, #f0f4ff 0%, #f7f0ff 100%) !important;
+  color: #0f172a;
+  border-radius: 16px;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.06);
+  padding: 2.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.15));
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.hero h1 {
+  color: var(--text-strong);
+  font-weight: 800;
+}
+
+.btn-primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.hero input[type='text'] {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #d1d5db;
+}
+
+.hero input::placeholder {
+  color: #94a3b8;
+}

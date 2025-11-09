@@ -5,6 +5,9 @@
   <h2>Thank you for your purchase!</h2>
   <p>Your order #{{ order.id }} has been placed successfully.</p>
   <p>We’ll notify you once it’s shipped.</p>
+  <div style="display:flex; gap:12px; justify-content:center; margin-top:12px;">
   <a class="chip primary" href="{% url 'storefront:product_list' %}">Continue Shopping</a>
+  <a class="chip" href="{% url 'storefront:order_list' %}">View My Orders</a>
+  </div>
 </div>
 {% endblock %}

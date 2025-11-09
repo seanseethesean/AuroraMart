@@ -1,6 +1,6 @@
 <div class="section" style="margin:18px 0; display:flex; gap:8px; flex-wrap:wrap;">
   <a class="chip {% if not active_category %}active{% endif %}" href="{% url 'storefront:product_list' %}">All</a>
   {% for slug, label in categories %}
-    <a class="chip {% if active_category == label %}active{% endif %}" href="{% url 'storefront:product_list' %}?cat={{ slug }}">{{ label }}</a>
+    <a class="chip {% if active_category == slug %}active{% endif %}" href="{% url 'storefront:product_list' %}?cat={{ slug }}">{{ label }}</a>
   {% endfor %}
 </div>

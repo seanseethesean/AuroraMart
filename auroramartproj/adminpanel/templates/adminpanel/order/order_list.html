@@ -4,12 +4,19 @@
 {% block content %}
 <h2>Orders</h2>
 
-<form method="get" class="mb-3">
-  <label>Filter by customer id</label>
-  <input type="text" name="customer" value="{{ customer_id }}" placeholder="Customer id">
-  <label>Filter by product id</label>
-  <input type="text" name="product" value="{{ product_id }}" placeholder="Product id">
-  <button class="btn btn-accent" type="submit">Filter</button>
+<form method="get" class="mb-3 row gy-2 gx-3 align-items-end">
+  <div class="col-sm-4 col-md-3">
+    <label class="form-label" for="filter-customer">Customer ID</label>
+    <input type="text" name="customer" id="filter-customer" value="{{ customer_id|default_if_none:'' }}" placeholder="e.g. 12" class="form-control">
+  </div>
+  <div class="col-sm-4 col-md-3">
+    <label class="form-label" for="filter-product">Product SKU</label>
+    <input type="text" name="product" id="filter-product" value="{{ product_sku|default_if_none:'' }}" placeholder="e.g. SKU-1001" class="form-control">
+  </div>
+  <div class="col-sm-4 col-md-2 d-flex gap-2">
+    <button class="btn btn-accent flex-grow-1" type="submit">Filter</button>
+    <a class="btn btn-outline" href="{% url 'adminpanel:order_list' %}">Reset</a>
+  </div>
 </form>
 
 <div class="card">
@@ -29,7 +36,12 @@
         {% for order in orders %}
           <tr>
             <td>{{ order.id }}</td>
-            <td>{{ order.user.username }} ({{ order.user.id }})</td>
+            <td>
+              {{ order.user.username }}
+              {% if order.customer_profile %}
+                (Customer #{{ order.customer_profile.id }})
+              {% endif %}
+            </td>
             <td>${{ order.total_price }}</td>
             <td>{{ order.status }}</td>
             <td>{{ order.date_ordered }}</td>

@@ -44,6 +44,7 @@
   border-radius: 6px;
   border: 1px solid #e6eaf2;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .quantity-control input[type="number"]::-webkit-outer-spin-button,
@@ -78,10 +79,29 @@
   20%, 40%, 60%, 80% { transform: translateX(5px); }
 }
 
-/* Homepage gradient container */
+/* Homepage hero surface */
 .hero {
-  background: linear-gradient(135deg, #c084fc, #818cf8, #60a5fa);
-  color: white;
+  background: linear-gradient(135deg, #f0f4ff 0%, #f7f0ff 100%);
+  color: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.1));
+  pointer-events: none;
+}
+
+.hero > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Cart quantity controls */

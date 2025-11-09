@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 from adminpanel.models import Product
 
 class CartItem(models.Model):
@@ -19,15 +20,33 @@ class CartItem(models.Model):
 
 
 class Order(models.Model):
+    STATUS_PROCESSING = 'Processing'
+    STATUS_SHIPPED = 'Shipped'
+    STATUS_OUT_FOR_DELIVERY = 'Out for Delivery'
+    STATUS_DELIVERED = 'Delivered'
+
+    STATUS_CHOICES = [
+        (STATUS_PROCESSING, 'Processing'),
+        (STATUS_SHIPPED, 'Shipped'),
+        (STATUS_OUT_FOR_DELIVERY, 'Out for Delivery'),
+        (STATUS_DELIVERED, 'Delivered'),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     address = models.TextField()
     payment_method = models.CharField(max_length=50, default='Card')
-    status = models.CharField(max_length=50, default='Processing')
+    status = models.CharField(max_length=32, choices=STATUS_CHOICES, default=STATUS_PROCESSING)
+    delivered_at = models.DateTimeField(null=True, blank=True)
     date_ordered = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Order #{self.id} - {self.user.username}"
+
+    def mark_delivered(self):
+        self.status = self.STATUS_DELIVERED
+        self.delivered_at = timezone.now()
+        self.save(update_fields=['status', 'delivered_at'])
 
 
 class OrderItem(models.Model):
@@ -48,3 +67,15 @@ class Recommendation(models.Model):
 
     def __str__(self):
         return f"Recommendation for {self.user.username}: {self.product.name}"
+
+
+class BasketHistory(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='basket_history')
+    items = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Basket snapshot for {self.user.username} at {self.created_at:%Y-%m-%d %H:%M}" 

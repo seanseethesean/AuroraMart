@@ -1,4 +1,5 @@
 from typing import Optional
+from functools import lru_cache
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -6,11 +7,27 @@ from django.contrib import messages
 from django.contrib.auth.views import LoginView, LogoutView
 from django.db import transaction
 from django.db.models import Q, F
+from django.views.decorators.http import require_POST
+from django.core.paginator import Paginator
 from adminpanel.models import Product, Customer, PRODUCT_CATEGORY_CHOICES
-from .models import CartItem, Order, OrderItem, Recommendation
+from .models import CartItem, Order, OrderItem, Recommendation, BasketHistory
 from django.contrib.auth import login as auth_login
 from .forms import OnboardingForm, ProfileUpdateForm, RegistrationForm
 
+
+EXTRA_CATEGORY_ALIASES = {
+    'automotive': {'auto', 'vehicle', 'car care'},
+    'beauty_personal_care': {'beauty', 'personal care', 'beauty personal care', 'hair', 'hair & beauty'},
+    'fashion_men': {'mens fashion', "men's fashion", 'men fashion', 'fashion'},
+    'fashion_women': {'womens fashion', "women's fashion", 'women fashion', 'fashion'},
+    'groceries_gourmet': {'groceries', 'grocery'},
+    'health': {'wellness'},
+    'home_kitchen': {'home', 'kitchen'},
+    'pet_supplies': {'pets', 'pet supply'},
+    'sports_outdoors': {'sports', 'outdoors'},
+    'toys_games': {'toys', 'games'},
+    'other': {'others'},
+}
 
 CATEGORY_SYNONYMS = {}
 for value, label in PRODUCT_CATEGORY_CHOICES:
@@ -20,48 +37,36 @@ for value, label in PRODUCT_CATEGORY_CHOICES:
         label.lower(),
         label.upper(),
         label.replace('&', 'and'),
-        label.replace('&', 'and').replace('  ', ' '),
+        label.replace('&', 'and').replace('-', ' '),
+        label.replace('-', ' '),
+        label.replace('  ', ' '),
     }
+    variants |= EXTRA_CATEGORY_ALIASES.get(value, set())
     CATEGORY_SYNONYMS[value] = {v.strip() for v in variants if v}
-
-# Additional legacy aliases
-CATEGORY_SYNONYMS.setdefault('hair', set()).update({'Beauty & Personal Care', 'Beauty', 'Hair and Beauty'})
-CATEGORY_SYNONYMS.setdefault('home', set()).update({'Home & Kitchen', 'Home and Kitchen', 'Home And Kitchen', 'Home'})
-CATEGORY_SYNONYMS.setdefault('sports', set()).update({'Sports & Outdoors', 'Sports and Outdoors', 'Sports'})
-CATEGORY_SYNONYMS.setdefault('groceries', set()).update({'Groceries & Gourmet', 'Groceries'})
-CATEGORY_SYNONYMS.setdefault('others', set()).update({'Other', 'others'})
-CATEGORY_SYNONYMS.setdefault('toys', set()).update({'Toys', 'Toy', 'Games'})
-
-# allow beauty alias to map to hair category for legacy data and URLs
-hair_synonyms = CATEGORY_SYNONYMS.get('hair', set()).copy()
-CATEGORY_SYNONYMS['beauty'] = hair_synonyms | {'beauty', 'Beauty'}
 
 CATEGORY_LABELS = dict(PRODUCT_CATEGORY_CHOICES)
 CATEGORY_DESCRIPTIONS = {
-    'electronics': 'Headphones, peripherals, gadgets',
-    'hair': 'Skincare and personal care picks',
-    'fashion': 'Wardrobe essentials for every day',
-    'sports': 'Fitness gear, outdoor must-haves',
-    'home': 'Cookware, storage, and home comforts',
-    'books': 'Bestsellers and thoughtful reads',
-    'groceries': 'Snacks and pantry staples',
-    'toys': 'Playtime favourites and gifts',
-    'others': 'Unique finds beyond the usual aisles',
+    'automotive': 'Auto care, accessories, and tools',
+    'beauty_personal_care': 'Self-care, skincare, and grooming essentials',
+    'books': 'Bestsellers, learning, and leisure reads',
+    'electronics': 'Headphones, peripherals, and smart gadgets',
+    'fashion_men': 'Menswear staples and style upgrades',
+    'fashion_women': 'Womenswear for every occasion',
+    'groceries_gourmet': 'Snacks, beverages, and pantry staples',
+    'health': 'Wellness boosts and daily supplements',
+    'home_kitchen': 'Cookware, decor, and home comforts',
+    'pet_supplies': 'Everything to spoil your pets',
+    'sports_outdoors': 'Gear up for fitness and adventures',
+    'toys_games': 'Playtime favourites and family fun',
+    'other': 'Unique finds beyond the usual aisles',
 }
 CANONICAL_SLUGS = set(CATEGORY_LABELS.keys())
 ALIAS_TO_CANONICAL = {}
 
 for key, synonyms in CATEGORY_SYNONYMS.items():
-    if key in CANONICAL_SLUGS:
-        canonical = key
-    elif key == 'beauty':
-        canonical = 'hair'
-    else:
-        canonical = None
-
+    canonical = key if key in CANONICAL_SLUGS else None
     if canonical is None:
         continue
-
     for alias in synonyms | {key}:
         ALIAS_TO_CANONICAL[alias.lower()] = canonical
     ALIAS_TO_CANONICAL[canonical.lower()] = canonical
@@ -108,6 +113,81 @@ def display_category_name(value: Optional[str]) -> Optional[str]:
     if slug and slug in CATEGORY_LABELS:
         return CATEGORY_LABELS[slug]
     return value
+
+
+ORDER_STATUS_SEQUENCE = [choice[0] for choice in Order.STATUS_CHOICES]
+
+
+@lru_cache(maxsize=512)
+def _cached_rule_suggestions(seed_tuple: tuple[str, ...], top_n: int) -> tuple[str, ...]:
+    try:
+        from adminpanel.ml_utils import recommend_products_from_rules
+    except Exception:
+        return tuple()
+
+    try:
+        return tuple(recommend_products_from_rules(list(seed_tuple), top_n=top_n))
+    except Exception:
+        return tuple()
+
+
+def recommend_products_for_skus(seed_skus, *, exclude_skus=None, limit=4):
+    """Helper to resolve Product objects from association-rule suggestions."""
+    if not seed_skus:
+        return []
+
+    seen_seed = set()
+    seed = []
+    for sku in seed_skus:
+        token = str(sku).strip()
+        if not token or token in seen_seed:
+            continue
+        seed.append(token)
+        seen_seed.add(token)
+    if not seed:
+        return []
+
+    exclude = {str(s) for s in (exclude_skus or []) if s}
+
+    raw_ids = _cached_rule_suggestions(tuple(seed), limit * 3)
+
+    ordered_ids = []
+    seen = set()
+    for sku in raw_ids:
+        key = str(sku)
+        if not key or key in exclude or key in seen:
+            continue
+        ordered_ids.append(key)
+        seen.add(key)
+        if len(ordered_ids) >= limit:
+            break
+
+    if not ordered_ids:
+        return []
+
+    products = Product.objects.filter(stock__gt=0, sku__in=ordered_ids)
+    lookup = {prod.sku: prod for prod in products}
+    return [lookup[sku] for sku in ordered_ids if sku in lookup]
+
+
+def record_basket_snapshot(user):
+    """Persist a snapshot of the user's current cart SKUs for recommendation history."""
+    if not getattr(user, 'is_authenticated', False):
+        return
+
+    skus = list(
+        CartItem.objects
+        .filter(user=user, product__sku__isnull=False)
+        .values_list('product__sku', flat=True)
+    )
+    if not skus:
+        return
+
+    try:
+        BasketHistory.objects.create(user=user, items=skus)
+    except Exception:
+        # Capture but do not block cart flows
+        pass
 
 # -----------------------------
 # Log In
@@ -161,9 +241,9 @@ def onboarding(request):
 # PRODUCT LIST
 # -----------------------------
 def product_list(request):
-    qs = Product.objects.filter(stock__gt=0).order_by('name')
+    qs = Product.objects.filter(stock__gt=0).order_by('-stock', '-id')
 
-    q = request.GET.get('q') or ""
+    q = (request.GET.get('q') or "").strip()
     cat = request.GET.get('cat') or ""
 
     if q:
@@ -185,10 +265,25 @@ def product_list(request):
         display_label = display_category_name(slug) or label
         category_list.append((slug, display_label))
 
+    paginator = Paginator(qs, 24)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    products_list = list(page_obj.object_list)
+
+    base_querystring = request.GET.copy()
+    base_querystring.pop('page', None)
+    base_querystring = base_querystring.urlencode()
+
+    page_range = list(page_obj.paginator.get_elided_page_range(number=page_obj.number, on_each_side=1, on_ends=1))
+
     return render(request, 'storefront/product_list.html', {
-        'products': qs,
+        'products': products_list,
         'categories': category_list,
         'active_category': active_category or cat,
+        'page_obj': page_obj,
+        'page_querystring': base_querystring,
+        'page_range': page_range,
     })
 
 # -----------------------------
@@ -196,7 +291,16 @@ def product_list(request):
 # -----------------------------
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk)
-    return render(request, 'storefront/product_detail.html', {'product': product})
+    suggestions = (
+        Product.objects
+        .filter(stock__gt=0, category=product.category)
+        .exclude(pk=product.pk)
+        .order_by('-stock', '-id')[:4]
+    )
+    return render(request, 'storefront/product_detail.html', {
+        'product': product,
+        'frequently_bought': list(suggestions),
+    })
 
 # -----------------------------
 # CART VIEW
@@ -229,10 +333,15 @@ def cart_view(request):
         ))
 
     total_price = sum(item.subtotal() for item in cart_items)
+    cart_skus = [getattr(item.product, 'sku', None) for item in cart_items]
+    cart_skus = [sku for sku in dict.fromkeys([sku for sku in cart_skus if sku])]
+    cart_exclude = set(cart_skus)
+    complete_set = recommend_products_for_skus(cart_skus, exclude_skus=cart_exclude, limit=4)
     return render(request, 'storefront/cart.html', {
         'cart_items': cart_items,
         'total_price': total_price,
         'total': total_price,
+        'complete_the_set': complete_set,
     })
 
 
@@ -276,6 +385,7 @@ def cart_update(request, pk):
             pass
 
     cart_item.save()
+    record_basket_snapshot(request.user)
     return redirect('storefront:cart_view')
 
 # -----------------------------
@@ -309,6 +419,7 @@ def cart_add(request, pk):
             messages.info(request, f"Your cart for {product.name} was capped at available stock ({product.stock}).")
         cart_item.quantity = new_quantity
     cart_item.save()
+    record_basket_snapshot(request.user)
     messages.success(request, f"{product.name} added to cart!")
     return redirect('storefront:cart_view')
 
@@ -319,6 +430,7 @@ def cart_add(request, pk):
 def cart_remove(request, pk):
     product = get_object_or_404(Product, pk=pk)
     CartItem.objects.filter(user=request.user, product=product).delete()
+    record_basket_snapshot(request.user)
     messages.info(request, f"{product.name} removed from cart.")
     return redirect('storefront:cart_view')
 
@@ -333,6 +445,10 @@ def checkout(request):
         return redirect('storefront:product_list')
 
     total_price = sum(item.subtotal() for item in cart_items)
+    cart_skus = [getattr(item.product, 'sku', None) for item in cart_items]
+    cart_skus = [sku for sku in dict.fromkeys([sku for sku in cart_skus if sku])]
+    cart_exclude = set(cart_skus)
+    complete_set = recommend_products_for_skus(cart_skus, exclude_skus=cart_exclude, limit=4)
 
     if request.method == 'POST':
         unavailable = []
@@ -381,12 +497,18 @@ def checkout(request):
                 )
                 Product.objects.filter(pk=item.product.pk).update(stock=F('stock') - item.quantity)
 
+            record_basket_snapshot(request.user)
+
             CartItem.objects.filter(user=request.user).delete()  # empty cart after order
 
         messages.success(request, "Order placed successfully!")
         return redirect('storefront:order_placed', order_id=order.id)
 
-    return render(request, 'storefront/checkout.html', {'cart_items': cart_items, 'total_price': total_price})
+    return render(request, 'storefront/checkout.html', {
+        'cart_items': cart_items,
+        'total_price': total_price,
+        'complete_the_set': complete_set,
+    })
 
 # -----------------------------
 # ORDER CONFIRMATION
@@ -395,6 +517,51 @@ def checkout(request):
 def order_placed(request, order_id):
     order = get_object_or_404(Order, pk=order_id)
     return render(request, 'storefront/order_placed.html', {'order': order})
+
+
+# -----------------------------
+# ORDERS OVERVIEW
+# -----------------------------
+@login_required
+def order_list(request):
+    orders = (
+        Order.objects.filter(user=request.user)
+        .prefetch_related('items__product')
+        .order_by('-date_ordered')
+    )
+
+    max_index = max(len(ORDER_STATUS_SEQUENCE) - 1, 1)
+    orders_payload = []
+    for order in orders:
+        items = list(order.items.all())
+        try:
+            progress_index = ORDER_STATUS_SEQUENCE.index(order.status)
+        except ValueError:
+            progress_index = 0
+        progress_percent = int((progress_index / max_index) * 100) if max_index else 100
+        orders_payload.append({
+            'order': order,
+            'items': items,
+            'progress_index': progress_index,
+            'progress_percent': progress_percent,
+        })
+
+    return render(request, 'storefront/orders.html', {
+        'orders_payload': orders_payload,
+        'status_sequence': ORDER_STATUS_SEQUENCE,
+    })
+
+
+@login_required
+@require_POST
+def order_confirm_delivery(request, pk):
+    order = get_object_or_404(Order, pk=pk, user=request.user)
+    if order.status != Order.STATUS_DELIVERED:
+        order.mark_delivered()
+        messages.success(request, f"Order #{order.id} marked as delivered. Thanks for confirming!")
+    else:
+        messages.info(request, f"Order #{order.id} is already recorded as delivered.")
+    return redirect('storefront:order_list')
 
 # -----------------------------
 # RECOMMENDATIONS
@@ -408,18 +575,11 @@ def recommendations(request):
     (which load models from `adminpanel/mlmodels/`). Failures are handled gracefully.
     """
     recs = Recommendation.objects.filter(user=request.user).select_related('product')
-    if recs.exists():
-        recommended_products = [rec.product for rec in recs if rec.product and rec.product.stock > 0]
-        return render(request, 'storefront/recommendations.html', {
-            'recommended_products': recommended_products,
-            'recommendations': recs,
-            'ml_based': False,
-            'inferred_category': None,
-        })
+    manual_products = [rec.product for rec in recs if rec.product and rec.product.stock > 0]
 
     # No DB recommendations — try ML helpers from adminpanel (lazy import)
     try:
-        from adminpanel.ml_utils import predict_preferred_category_for_customer, recommend_products_from_rules
+        from adminpanel.ml_utils import predict_preferred_category_for_customer
     except Exception:
         # ml_utils missing or dependencies not installed — render empty/DB fallback
         return render(request, 'storefront/recommendations.html', {
@@ -446,24 +606,55 @@ def recommendations(request):
             raw = raw.strip()
             if not raw:
                 continue
-            slug = resolve_category_slug(raw) or raw
-            if slug not in preferred_slugs:
+            slug = resolve_category_slug(raw) or resolve_category_slug(display_category_name(raw)) or raw
+            if slug and slug not in preferred_slugs:
                 preferred_slugs.append(slug)
 
-    # Build basket SKUs from current cart
+    # Build SKU signal from current cart and recent basket history snapshots
+    basket_skus: list[str] = []
     try:
-        cart_items = CartItem.objects.select_related('product').filter(user=request.user)
-        basket_skus = [ci.product.sku for ci in cart_items if getattr(ci.product, 'sku', None)]
+        cart_sku_qs = (
+            CartItem.objects
+            .filter(user=request.user, product__sku__isnull=False)
+            .values_list('product__sku', flat=True)
+        )
+        basket_skus.extend([sku for sku in cart_sku_qs if sku])
     except Exception:
-        basket_skus = []
+        pass
+
+    try:
+        history_entries = (
+            BasketHistory.objects
+            .filter(user=request.user)
+            .order_by('-created_at')[:10]
+        )
+        for snapshot in history_entries:
+            items = snapshot.items or []
+            if isinstance(items, (list, tuple)):
+                basket_skus.extend(str(sku) for sku in items if sku)
+    except Exception:
+        pass
+
+    try:
+        order_sku_qs = (
+            OrderItem.objects
+            .filter(order__user=request.user, product__sku__isnull=False)
+            .order_by('-order__date_ordered')
+            .values_list('product__sku', flat=True)[:25]
+        )
+        basket_skus.extend([sku for sku in order_sku_qs if sku])
+    except Exception:
+        pass
+
+    if basket_skus:
+        basket_skus = [sku for sku in dict.fromkeys([str(sku).strip() for sku in basket_skus if sku])]
+        basket_skus = basket_skus[:50]
 
     recommended_product_ids = []
-    try:
-        raw_ids = recommend_products_from_rules(basket_skus, top_n=12)
+    if basket_skus:
+        raw_ids = _cached_rule_suggestions(tuple(basket_skus), 12)
         if raw_ids:
-            recommended_product_ids = [str(sku) for sku in raw_ids if sku]
-    except Exception:
-        recommended_product_ids = []
+            recommended_product_ids = [str(sku).strip() for sku in raw_ids if sku]
 
     # Preserve order while removing duplicates
     seen_ids = set()
@@ -479,6 +670,8 @@ def recommendations(request):
         lookup = {prod.sku: prod for prod in qs}
         products_list = [lookup[sku] for sku in ordered_ids if sku in lookup]
 
+    ml_based = bool(ordered_ids)
+
     fallback_sources = []
     for slug in preferred_slugs:
         if slug and slug not in fallback_sources:
@@ -486,16 +679,23 @@ def recommendations(request):
     if canonical_predicted and canonical_predicted not in fallback_sources:
         fallback_sources.append(canonical_predicted)
 
+    if not products_list and manual_products:
+        products_list = manual_products
+        ml_based = False
+
     if not products_list:
         for slug in fallback_sources:
             resolved_slug = resolve_category_slug(slug) or slug
-            fallback_qs = Product.objects.filter(stock__gt=0).filter(category_filter_q(resolved_slug)).order_by('-stock', 'name')[:8]
+            fallback_qs = (
+                Product.objects
+                .filter(stock__gt=0)
+                .filter(category_filter_q(resolved_slug))
+                .order_by('-stock', '-id')[:8]
+            )
             if fallback_qs:
                 products_list = list(fallback_qs)
                 display_predicted = display_category_name(resolved_slug)
                 break
-
-    ml_based = bool(ordered_ids)
 
     return render(request, 'storefront/recommendations.html', {
         'recommended_products': products_list,
