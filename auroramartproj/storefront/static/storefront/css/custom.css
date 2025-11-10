@@ -166,6 +166,21 @@
   background: var(--am-blue-dark) !important;
 }
 
+/* Scoped storefront overrides (higher specificity) so our rules win when loaded last */
+.storefront .btn.btn-primary, .storefront .btn.primary, .storefront .chip.primary {
+  background: var(--am-blue);
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 10px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.storefront .btn.btn-primary:hover, .storefront .btn.primary:hover, .storefront .chip.primary:hover {
+  background: var(--am-blue-dark);
+}
+
 /* Make sure previous view-cart class uses primary look */
 .view-cart-button { background: var(--am-blue); color: #fff; border: none; }
 
@@ -182,6 +197,23 @@
 }
 
 .search input::placeholder, .search .search-input::placeholder {
+  color: var(--am-placeholder);
+}
+
+/* Scoped search/input rule to ensure parity across pages */
+.storefront .search input, .storefront .search .search-input, .storefront .search .form-input, .storefront .form-input {
+  background: #ffffff;
+  border: 1px solid rgba(15,23,42,0.06);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+  padding: 12px 14px;
+  border-radius: 8px;
+  outline: none;
+  color: #0f172a;
+  min-height: 44px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.storefront .search input::placeholder, .storefront .search .search-input::placeholder, .storefront .search .form-input::placeholder, .storefront .form-input::placeholder {
   color: var(--am-placeholder);
 }
 
@@ -266,3 +298,6 @@
   font-size: 0.8em;
 }
 .savings-note { color: #047857; font-weight:600; }
+
+/* Temporary visual check helper — toggle via DevTools: set <html data-style-check="on"> */
+html[data-style-check="on"] .style-probe { outline: 2px dashed red; }

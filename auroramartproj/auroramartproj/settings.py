@@ -122,6 +122,8 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 # Where collectstatic will gather static files for deployment.
 # In development this can be a 'staticfiles' folder at the project root.
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+# Simple string to force cache-busting when static files change in development.
+STATIC_VERSION = "2"
 
 # Directory where ML artifacts (joblib models, trained data CSVs) will be placed.
 # Create this folder at the project root and drop your provided joblib/csv files there.
