@@ -332,7 +332,10 @@ def cart_view(request):
             ", ".join(sorted(set(adjusted_names)))
         ))
 
-    total_price = sum(item.subtotal() for item in cart_items)
+    # compute total and total savings using CartItem helpers
+    from decimal import Decimal
+    total_price = sum((item.subtotal() for item in cart_items), Decimal('0.00'))
+    total_savings = sum((item.total_savings() for item in cart_items), Decimal('0.00'))
     cart_skus = [getattr(item.product, 'sku', None) for item in cart_items]
     cart_skus = [sku for sku in dict.fromkeys([sku for sku in cart_skus if sku])]
     cart_exclude = set(cart_skus)
@@ -341,6 +344,7 @@ def cart_view(request):
         'cart_items': cart_items,
         'total_price': total_price,
         'total': total_price,
+        'total_savings': total_savings,
         'complete_the_set': complete_set,
     })
 
@@ -443,8 +447,9 @@ def checkout(request):
     if not cart_items:
         messages.info(request, "Your cart is empty.")
         return redirect('storefront:product_list')
-
-    total_price = sum(item.subtotal() for item in cart_items)
+    from decimal import Decimal
+    total_price = sum((item.subtotal() for item in cart_items), Decimal('0.00'))
+    total_savings = sum((item.total_savings() for item in cart_items), Decimal('0.00'))
     cart_skus = [getattr(item.product, 'sku', None) for item in cart_items]
     cart_skus = [sku for sku in dict.fromkeys([sku for sku in cart_skus if sku])]
     cart_exclude = set(cart_skus)
@@ -493,7 +498,7 @@ def checkout(request):
                     order=order,
                     product=item.product,
                     quantity=item.quantity,
-                    price=item.product.price
+                    price=item.product.get_display_price()
                 )
                 Product.objects.filter(pk=item.product.pk).update(stock=F('stock') - item.quantity)
 

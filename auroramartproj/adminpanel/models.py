@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 import os
+from decimal import Decimal, ROUND_HALF_UP
 
 
 PRODUCT_CATEGORY_CHOICES = [
@@ -49,14 +50,21 @@ class Product(models.Model):
 
     def get_display_price(self):
         """Return price after applying discount_percent if present."""
+        try:
+            price = Decimal(self.price)
+        except Exception:
+            return self.price
+
         if self.discount_percent:
             try:
-                dp = float(self.discount_percent)
-                discounted = float(self.price) * (1 - dp / 100.0)
-                return round(discounted, 2)
+                dp = Decimal(self.discount_percent)
+                multiplier = (Decimal('100') - dp) / Decimal('100')
+                discounted = (price * multiplier).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                return discounted
             except Exception:
-                return self.price
-        return self.price
+                return price
+
+        return price
 
     def __str__(self):
         return self.name

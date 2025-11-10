@@ -13,7 +13,47 @@ class CartItem(models.Model):
         unique_together = ('user', 'product')
 
     def subtotal(self):
-        return self.quantity * self.product.price
+        # Use the product's display price (which applies product-level discounts)
+        try:
+            unit = self.product.get_display_price()
+            # ensure Decimal math
+            from decimal import Decimal
+            unit_dec = Decimal(unit)
+            return (unit_dec * Decimal(self.quantity)).quantize(Decimal('0.01'))
+        except Exception:
+            try:
+                from decimal import Decimal
+                return (Decimal(self.product.price) * Decimal(self.quantity)).quantize(Decimal('0.01'))
+            except Exception:
+                return self.quantity * (self.product.price or 0)
+
+    def unit_price(self):
+        """Return per-unit (possibly discounted) price as Decimal."""
+        try:
+            from decimal import Decimal
+            return Decimal(self.product.get_display_price())
+        except Exception:
+            return self.product.price
+
+    def original_unit_price(self):
+        try:
+            from decimal import Decimal
+            return Decimal(self.product.price)
+        except Exception:
+            return self.product.price
+
+    def savings_per_unit(self):
+        try:
+            return (self.original_unit_price() - self.unit_price()).quantize(__import__('decimal').Decimal('0.01'))
+        except Exception:
+            return 0
+
+    def total_savings(self):
+        try:
+            from decimal import Decimal
+            return (self.savings_per_unit() * Decimal(self.quantity)).quantize(Decimal('0.01'))
+        except Exception:
+            return 0
 
     def __str__(self):
         return f"{self.product.name} x {self.quantity}"

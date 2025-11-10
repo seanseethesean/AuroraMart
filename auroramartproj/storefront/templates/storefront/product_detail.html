@@ -20,7 +20,16 @@
 
   <h2>{{ product.name }}</h2>
   <p class="muted">{{ product.description }}</p>
-  <p><strong>Price:</strong> ${{ product.price }}</p>
+  <p>
+    <strong>Price:</strong>
+    {% if product.discount_percent %}
+      <span class="discounted-price">${{ product.get_display_price }}</span>
+      <small class="original-price">${{ product.price }}</small>
+      <span class="discount-badge">-{{ product.discount_percent|floatformat:0 }}%</span>
+    {% else %}
+      ${{ product.price }}
+    {% endif %}
+  </p>
   {% if product.stock > 0 %}
     <p><strong>In stock:</strong> {{ product.stock }}</p>
     <form method="post" action="{% url 'storefront:cart_add' product.id %}">
@@ -44,7 +53,11 @@
           <img src="{{ rec.image.url }}" alt="{{ rec.name }}" style="width:100%; height:140px; object-fit:cover; border-radius:8px; margin-bottom:8px;">
         {% endif %}
         <strong>{{ rec.name }}</strong>
-        <small class="text-muted">${{ rec.price }}</small>
+        {% if rec.discount_percent %}
+          <small class="text-muted"><span class="discounted-price">${{ rec.get_display_price }}</span> <span class="original-price">${{ rec.price }}</span></small>
+        {% else %}
+          <small class="text-muted">${{ rec.price }}</small>
+        {% endif %}
       </a>
     {% endfor %}
   </div>

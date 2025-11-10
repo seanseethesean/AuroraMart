@@ -196,6 +196,11 @@ def order_list(request):
             order.customer_profile = order.user.customer
         except Customer.DoesNotExist:
             order.customer_profile = None
+        # Map internal order.status to admin-friendly status labels
+        if getattr(order, 'status', None) == Order.STATUS_DELIVERED:
+            order.display_status = 'Completed'
+        else:
+            order.display_status = 'In Progress'
 
     context = {
         'orders': orders,
@@ -209,7 +214,12 @@ def order_list(request):
 def order_detail(request, pk):
     order = get_object_or_404(Order, pk=pk)
     items = order.items.select_related('product')
-    return render(request, 'adminpanel/order/order_detail.html', {'order': order, 'items': items})
+    # Admin-facing status label
+    if getattr(order, 'status', None) == Order.STATUS_DELIVERED:
+        display_status = 'Completed'
+    else:
+        display_status = 'In Progress'
+    return render(request, 'adminpanel/order/order_detail.html', {'order': order, 'items': items, 'display_status': display_status})
 
 
 @staff_required

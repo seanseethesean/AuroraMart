@@ -118,12 +118,151 @@
 
 /* View cart button */
 .view-cart-button {
-  background-color: #0ea5e9 !important;
-  color: white !important;
+  background: var(--am-blue) !important;
+  color: #fff !important;
   border: none !important;
+  border-radius: 0.5rem !important;
+  padding: 10px 16px !important;
 }
 
 /* Product SKU */
 .text-muted {
   color: #6b7280;
 }
+
+:root{
+  --am-blue: #3b82f6; /* primary */
+  --am-blue-dark: #2563eb; /* hover */
+  --am-placeholder: #94a3b8;
+}
+
+.btn, .chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: 10px 16px;
+  border-radius: 0.5rem; /* 8px */
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: inherit;
+  transition: background-color .12s ease, transform .06s ease;
+}
+
+.btn-primary, .btn.btn-primary, .btn.primary, .chip.primary, .chip.primary:visited {
+  background: var(--am-blue) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 0.5rem !important;
+  padding: 10px 16px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.btn-primary:hover, .btn.btn-primary:hover, .btn.primary:hover, .chip.primary:hover {
+  background: var(--am-blue-dark) !important;
+}
+
+/* Make sure previous view-cart class uses primary look */
+.view-cart-button { background: var(--am-blue); color: #fff; border: none; }
+
+/* Search input styling: match Home page */
+.search input, .search .search-input {
+  background: #ffffff;
+  border: 1px solid rgba(15,23,42,0.06);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+  padding: 12px 14px;
+  border-radius: 8px;
+  outline: none;
+  color: #0f172a;
+  min-height: 44px;
+}
+
+.search input::placeholder, .search .search-input::placeholder {
+  color: var(--am-placeholder);
+}
+
+.search { display:flex; gap:8px; align-items:center; }
+.search button { padding: 12px 16px; border-radius: 8px; background: var(--am-blue); color: #fff; border:none; }
+.search button:hover { background: var(--am-blue-dark); }
+
+/* Formal input / form controls used site-wide */
+.form-input, textarea, select, input[type="text"], input[type="number"], input[type="email"], input[type="password"] {
+  background: #ffffff;
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.04);
+  transition: box-shadow .12s ease, border-color .12s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-input:focus, textarea:focus, select:focus, input:focus {
+  border-color: var(--am-blue);
+  box-shadow: 0 6px 18px rgba(59,130,246,0.12);
+  outline: none;
+}
+
+/* Checkout-specific spacing & layout refinements */
+.checkout-form .section { margin-bottom: 22px; }
+.section-header { font-weight: 800; margin-bottom: 10px; font-size: 1.05rem; }
+.checkout-grid { display:grid; gap:12px; }
+.checkout-grid.columns-2 { grid-template-columns: repeat(2, 1fr); }
+.checkout-grid.columns-3 { grid-template-columns: 2fr 1fr 1fr; }
+
+/* Ensure card inputs are visually balanced */
+.checkout-form .card-row .form-input { height:44px; display:block; }
+.actions { display:flex; gap:12px; align-items:center; }
+
+/* Light, minimal shadow for inputs on desktop only */
+@media (min-width:641px){
+  .form-input { box-shadow: 0 8px 20px rgba(2,6,23,0.04); }
+}
+
+/* Accessibility: stronger focus for keyboard users */
+.form-input:focus { box-shadow: 0 8px 28px rgba(59,130,246,0.16); }
+
+/* Checkout-specific layout helpers */
+.section-header { font-weight:700; margin-bottom:8px; }
+.checkout-grid { display:grid; gap:12px; }
+.checkout-grid.columns-2 { grid-template-columns: repeat(2, 1fr); }
+.checkout-grid.columns-3 { grid-template-columns: 2fr 1fr 1fr; }
+
+/* Card details inline layout */
+.card-row { display:flex; gap:8px; }
+.card-row .form-input { flex:1; }
+
+/* Accessibility: ensure sufficient contrast on primary background */
+.btn.primary:focus, .btn-primary:focus, .btn.btn-primary:focus, .chip.primary:focus { box-shadow: 0 6px 18px rgba(59,130,246,0.18); }
+
+/* Reduce heavy shadows on small devices */
+@media (max-width:640px){
+  .hero { box-shadow: none; }
+  .search input, .form-input { box-shadow: none; }
+  .checkout-grid.columns-2 { grid-template-columns: 1fr; }
+}
+
+/* Discount display helpers */
+.discounted-price {
+  color: #065f46; /* greenish for discounted */
+  font-weight: 700;
+  margin-right: 6px;
+}
+.original-price {
+  color: #6b7280;
+  text-decoration: line-through;
+  font-size: 0.95em;
+}
+.discount-badge {
+  background: linear-gradient(90deg, rgba(240, 249, 235, 1), rgba(220, 252, 231, 1));
+  color: #166534;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.8em;
+}
+.savings-note { color: #047857; font-weight:600; }

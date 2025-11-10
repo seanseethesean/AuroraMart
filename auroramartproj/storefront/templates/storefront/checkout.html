@@ -2,31 +2,73 @@
 {% block title %}Checkout — AuroraMart{% endblock %}
 {% block content %}
 <h2>Checkout</h2>
-<form method="post">
+<form method="post" class="checkout-form">
   {% csrf_token %}
+
   <div class="section">
-    <label>Shipping Address</label><br>
-    <textarea name="address" rows="3" required></textarea>
+    <h3 class="section-header">Shipping Address</h3>
+    <textarea name="address" rows="3" required class="form-input"></textarea>
   </div>
+
   <div class="section">
-    <label>Payment Method</label><br>
-    <select name="payment_method" required>
+    <h3 class="section-header">Payment Method</h3>
+    <select name="payment_method" required class="form-input">
       <option>Card</option>
       <option>PayNow</option>
       <option>Cash on Delivery</option>
     </select>
   </div>
+
   <div class="section">
-    <h4>Card Details (test only)</h4>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-      <input name="card_name" placeholder="Name on card" required>
-      <input name="card_number" placeholder="Card number" required>
-      <input name="card_expiry" placeholder="MM/YY" required>
-      <input name="card_cvv" placeholder="CVV" required>
+    <h3 class="section-header">Card Details</h3>
+    <div class="checkout-grid columns-2">
+      <div class="card-row">
+        <input name="card_name" placeholder="Name on card" required class="form-input">
+      </div>
+
+      <div class="card-row">
+        <input name="card_number" placeholder="Card number" required class="form-input">
+      </div>
+
+      <div class="card-row">
+        <input name="card_expiry" placeholder="MM/YY" required class="form-input">
+      </div>
+
+      <div class="card-row">
+        <input name="card_cvv" placeholder="CVV" required class="form-input">
+      </div>
     </div>
+    <div class="muted" style="margin-top:8px; font-size:0.95em;">Test card details are accepted in this demo.</div>
   </div>
-  <button class="chip primary" type="submit">Place Order</button>
+
+  <div class="section actions">
+    <button class="btn primary" type="submit">Place Order</button>
+  </div>
 </form>
+
+<div class="section" style="margin-top:18px;">
+  <h3>Order summary</h3>
+  {% if cart_items %}
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      {% for item in cart_items %}
+        <div style="display:flex; justify-content:space-between;">
+          <div>{{ item.product.name }} × {{ item.quantity }}</div>
+          <div>${{ item.subtotal }}</div>
+        </div>
+      {% endfor %}
+      <hr>
+      <div style="display:flex; justify-content:space-between;">
+        <div><strong>Total</strong></div>
+        <div><strong>${{ total_price }}</strong></div>
+      </div>
+      {% if total_savings and total_savings > 0 %}
+        <div style="color:#047857;">You saved ${{ total_savings }} on this order</div>
+      {% endif %}
+    </div>
+  {% else %}
+    <p class="muted">No items in cart.</p>
+  {% endif %}
+</div>
 
 {% if complete_the_set %}
   <div class="section" style="margin-top:24px;">
@@ -39,7 +81,11 @@
             <img src="{{ rec.image.url }}" alt="{{ rec.name }}" style="width:100%; height:140px; object-fit:cover; border-radius:8px; margin-bottom:8px;">
           {% endif %}
           <strong>{{ rec.name }}</strong>
-          <small class="text-muted">${{ rec.price }}</small>
+          {% if rec.discount_percent %}
+            <small class="text-muted"><span class="discounted-price">${{ rec.get_display_price }}</span> <span class="original-price">${{ rec.price }}</span></small>
+          {% else %}
+            <small class="text-muted">${{ rec.price }}</small>
+          {% endif %}
         </a>
       {% endfor %}
     </div>
