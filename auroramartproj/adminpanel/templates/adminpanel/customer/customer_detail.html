@@ -29,12 +29,7 @@
     
     <div class="d-flex gap-2">
       <a href="{% url 'adminpanel:customer_list' %}" class="btn btn-outline">Back to Customers</a>
-      <form method="POST" action="{% url 'adminpanel:toggle_customer' customer.id %}" class="d-inline">
-        {% csrf_token %}
-        <button type="submit" class="btn {% if customer.user.is_active %}btn-danger{% else %}btn-accent{% endif %}">
-          {{ customer.user.is_active|yesno:"Deactivate Account,Activate Account" }}
-        </button>
-      </form>
+      <a href="{% url 'adminpanel:customer_delete' customer.id %}" class="btn btn-danger">Delete Account</a>
     </div>
   </div>
 </div>

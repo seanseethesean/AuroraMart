@@ -69,6 +69,33 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def display_image(self):
+        """Return a URL for the product image if it exists and is not a PDF, otherwise return the static placeholder URL.
+
+        This centralizes the PDF-check and storage existence check so templates can simply use
+        `product.display_image` safely without having to reason about storage backends.
+        """
+        try:
+            if self.image and getattr(self.image, 'name', None):
+                name = self.image.name
+                # Avoid returning PDF thumbnails — treat them as missing images
+                if str(name).lower().endswith('.pdf'):
+                    raise FileNotFoundError()
+                storage = getattr(self.image, 'storage', None)
+                if storage and storage.exists(name):
+                    return self.image.url
+        except Exception:
+            # fall through to placeholder
+            pass
+
+        try:
+            from django.templatetags.static import static
+            return static('storefront/images/product_placeholder.svg')
+        except Exception:
+            # As a last resort, return an empty string so templates don't error
+            return ''
+
 class Customer(models.Model):
     GENDER_CHOICES = [
         ('M', 'Male'),

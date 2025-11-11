@@ -9,17 +9,20 @@
 
 {% include "storefront/partials/category_filters.html" %}
 
+{% load static %}
+{% static 'storefront/images/product_placeholder.svg' as product_placeholder %}
+
 <div class="grid section">
   {% for product in products %}
     <a class="card" href="{% url 'storefront:product_detail' product.id %}" style="position:relative;">
       {% if product.stock|default:0 < 5 %}
         <div class="product-badge">Last pieces</div>
       {% endif %}
-      {% if product.image %}
         <div style="height:160px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">
-          <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-height:160px; width:auto;">
+          <img src="{{ product.display_image }}" alt="{{ product.name }}" style="max-height:160px; width:auto;">
         </div>
-      {% endif %}
+      {# old fallback removed; display_image already renders placeholder when needed #}
+      {% comment %} legacy image block removed - display_image used above {% endcomment %}
       <strong>{{ product.name }}</strong><br>
       {% if product.discount_percent %}
         <div style="display:flex; gap:8px; align-items:baseline;">

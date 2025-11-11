@@ -34,12 +34,7 @@
             </td>
             <td>
               <a href="{% url 'adminpanel:customer_detail' customer.id %}" class="btn btn-sm btn-accent text-white">View</a>
-              <form method="POST" action="{% url 'adminpanel:toggle_customer' customer.id %}" class="d-inline">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-sm {% if customer.user.is_active %}btn-danger{% else %}btn-outline{% endif %}">
-                  {{ customer.user.is_active|yesno:"Deactivate,Activate" }}
-                </button>
-              </form>
+              <a href="{% url 'adminpanel:customer_delete' customer.id %}" class="btn btn-sm btn-danger">Delete</a>
             </td>
           </tr>
         {% empty %}

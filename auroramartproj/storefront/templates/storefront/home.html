@@ -94,7 +94,12 @@
   <div class="grid category-grid">
     {% for card in category_cards %}
       <a class="card" href="{% url 'storefront:product_list' %}?cat={{ card.slug }}">
-        {{ card.label }}
+        {% if card.image %}
+          <div style="height:96px; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">
+            <img src="{{ card.image }}" alt="{{ card.label }}" style="max-height:96px; width:auto; border-radius:8px;">
+          </div>
+        {% endif %}
+        <strong>{{ card.label }}</strong>
         <small>{{ card.tagline }}</small>
       </a>
     {% endfor %}

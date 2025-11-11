@@ -6,10 +6,13 @@
   .orders-stream { display: grid; gap: 24px; }
   .order-card { padding: 20px; }
   .order-header { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 12px; }
-  .order-header .status-badge { background: #e0f2fe; color: #0369a1; font-weight: 600; padding: 4px 10px; border-radius: 999px; font-size: 0.85rem; }
+  .order-header .status-badge { font-weight: 600; padding: 4px 10px; border-radius: 999px; font-size: 0.85rem; display: inline-block; }
+  .order-header .status-badge.in-progress { background: #e0f2fe; color: #0369a1; }
+  .order-header .status-badge.completed { background: linear-gradient(180deg, #bfffd3 0%, #86efac 100%); color: #064e3b; }
   .order-placed { color: #6b7280; font-size: 0.9rem; margin-bottom: 16px; }
   .progress-track { background: #e5e7eb; height: 6px; border-radius: 999px; overflow: hidden; margin-bottom: 12px; }
   .progress-value { height: 100%; background: #0ea5e9; transition: width 0.3s ease; width: calc(var(--progress, 0) * 1%); }
+  .progress-track.completed .progress-value { background: linear-gradient(180deg, #86efac 0%, #34d399 100%); }
   .status-steps { list-style: none; display: flex; justify-content: space-between; padding: 0; margin: 0 0 16px; font-size: 0.85rem; color: #6b7280; }
   .status-steps li { flex: 1; text-align: center; padding-bottom: 6px; border-bottom: 2px solid #e5e7eb; }
   .status-steps li.active { border-color: #0ea5e9; color: #0ea5e9; font-weight: 600; }
@@ -31,10 +34,10 @@
           <article class="card order-card">
             <div class="order-header">
               <h2 style="margin:0; font-size:1.2rem;">Order #{{ entry.order.id }}</h2>
-              <span class="status-badge">{{ entry.order.status }}</span>
+              <span class="status-badge {% if entry.order.status == 'Delivered' %}completed{% else %}in-progress{% endif %}">{{ entry.order.status }}</span>
             </div>
             <p class="order-placed">Placed {{ entry.order.date_ordered|date:"M j, Y • H:i" }}</p>
-            <div class="progress-track" aria-hidden="true">
+            <div class="progress-track {% if entry.order.status == 'Delivered' %}completed{% endif %}" aria-hidden="true">
               <div class="progress-value" style="--progress: {{ entry.progress_percent|default:0 }};"></div>
             </div>
             <ol class="status-steps">

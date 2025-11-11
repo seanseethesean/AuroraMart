@@ -44,7 +44,8 @@
             </td>
             <td>${{ order.total_price }}</td>
             <td>
-              <span class="status-badge {% if order.display_status == 'Completed' %}completed{% else %}in-progress{% endif %}">{{ order.display_status }}</span>
+              {# Show the actual status string and use completed styling only for Delivered #}
+              <span class="status-badge {% if order.display_status == 'Delivered' %}completed{% else %}in-progress{% endif %}">{{ order.display_status }}</span>
             </td>
             <td>{{ order.date_ordered }}</td>
             <td><a href="{% url 'adminpanel:order_detail' order.id %}" class="btn btn-outline">View</a></td>

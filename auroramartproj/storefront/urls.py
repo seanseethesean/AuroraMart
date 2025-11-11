@@ -22,8 +22,6 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('onboarding/', views.onboarding, name='onboarding'),
     path('profile/', views.profile, name='profile'),
-    # Password reset flows removed per project request.
-    # Password change (for logged-in users)
     path('password_change/', auth_views.PasswordChangeView.as_view(
         template_name='storefront/auth/password_change.html',
         success_url=reverse_lazy('storefront:password_change_done')
@@ -32,6 +30,4 @@ urlpatterns = [
     path('password_change/done/', auth_views.PasswordChangeDoneView.as_view(
         template_name='storefront/auth/password_change_done.html'
     ), name='password_change_done'),
-    # Stripe payment intent endpoint used by checkout.js
-    path('create-payment-intent/', views.create_payment_intent, name='create_payment_intent'),
 ]

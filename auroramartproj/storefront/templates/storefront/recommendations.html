@@ -7,8 +7,11 @@
 <div class="grid section">
   {% for product in recommended_products %}
     <a class="card" href="{% url 'storefront:product_detail' product.id %}">
-      <strong>{{ product.name }}</strong><br>
-      <small>${{ product.price }}</small>
+      <div style="height:140px; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">
+        <img src="{{ product.display_image }}" alt="{{ product.name }}" style="max-height:140px; width:auto; border-radius:8px;">
+      </div>
+      <strong>{{ product.name }}</strong>
+      <div><small>${{ product.get_display_price }}</small></div>
     </a>
   {% empty %}
     <p>No recommendations available at the moment. Add more items to your cart or update your preferences to help us learn what you like.</p>

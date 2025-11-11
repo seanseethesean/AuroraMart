@@ -1,6 +1,9 @@
 from typing import Optional
 from functools import lru_cache
 import logging
+import os
+from django.templatetags.static import static
+import threading
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -18,7 +21,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 import json
-import stripe
+from datetime import datetime
 
 
 EXTRA_CATEGORY_ALIASES = {
@@ -218,10 +221,53 @@ def home(request):
     products = Product.objects.filter(stock__gt=0).order_by('-stock')[:8]  # show 8 featured in-stock items
     category_cards = []
     for slug, label in get_canonical_category_list():
+        # Resolve a suitable image file for this category. Look in the app's static
+        # images directory for files matching common basenames (slug, simplified slug,
+        # or a small special-case map) with common image extensions.
+        images_dir = os.path.join(settings.BASE_DIR, 'storefront', 'static', 'storefront', 'images')
+
+        def find_image_for_slug(s):
+            candidates = []
+            # allow special-case friendly basenames
+            special = {
+                'beauty_personal_care': 'beauty',
+                'groceries_gourmet': 'groceries',
+                'home_kitchen': 'home',
+                'pet_supplies': 'pet',
+                'sports_outdoors': 'sports',
+                'toys_games': 'toy',
+                'other': 'others'
+            }
+            if s in special:
+                candidates.append(special[s])
+            # direct slug and a simplified token (first segment)
+            candidates.append(s)
+            first = s.split('_')[0]
+            if first and first not in candidates:
+                candidates.append(first)
+
+            exts = ['.png', '.jpg', '.jpeg', '.webp', '.avif', '.svg']
+            for base in candidates:
+                for ext in exts:
+                    fname = f"{base}{ext}"
+                    path = os.path.join(images_dir, fname)
+                    try:
+                        if os.path.exists(path):
+                            return static(f'storefront/images/{fname}')
+                    except Exception:
+                        # ignore filesystem issues and continue
+                        continue
+            # fallback placeholder
+            try:
+                return static('storefront/images/product_placeholder.svg')
+            except Exception:
+                return ''
+
         category_cards.append({
             'slug': slug,
             'label': display_category_name(slug) or label,
             'tagline': CATEGORY_DESCRIPTIONS.get(slug, 'Shop now'),
+            'image': find_image_for_slug(slug),
         })
     return render(request, 'storefront/home.html', {
         'products': products,
@@ -345,7 +391,55 @@ def cart_view(request):
     cart_skus = [getattr(item.product, 'sku', None) for item in cart_items]
     cart_skus = [sku for sku in dict.fromkeys([sku for sku in cart_skus if sku])]
     cart_exclude = set(cart_skus)
-    complete_set = recommend_products_for_skus(cart_skus, exclude_skus=cart_exclude, limit=4)
+
+    # Use any precomputed/manual Recommendation records first (very cheap DB lookup).
+    # If none exist, avoid calling the potentially expensive ML helper synchronously on the
+    # request path — instead spawn a background thread to compute and persist recommendations
+    # for the user so subsequent requests are fast.
+    complete_set = []
+    try:
+        manual_recs = (
+            Recommendation.objects
+            .filter(user=request.user)
+            .select_related('product')
+            .order_by('-generated_at')
+        )
+        manual_products = [rec.product for rec in manual_recs if getattr(rec.product, 'stock', 0) > 0]
+        if manual_products:
+            complete_set = manual_products[:4]
+        else:
+            # Kick off an asynchronous computation of recommendations and return the page
+            # without waiting for it to complete so add-to-cart stays snappy.
+            def _compute_and_store(user, skus, exclude_skus, limit=4):
+                try:
+                    products = recommend_products_for_skus(skus, exclude_skus=exclude_skus, limit=limit)
+                    # Persist Recommendations (replace older ones)
+                    if products:
+                        # remove old recommendations for user
+                        Recommendation.objects.filter(user=user).delete()
+                        for p in products:
+                            try:
+                                Recommendation.objects.create(user=user, product=p, reason='association_rules')
+                            except Exception:
+                                # ignore per-item failures
+                                pass
+                except Exception:
+                    # be quiet on failures — expensive ML helper may be missing or slow
+                    pass
+
+            if cart_skus:
+                thread = threading.Thread(target=_compute_and_store, args=(request.user, cart_skus, cart_exclude), daemon=True)
+                thread.start()
+            # cheap fallback: pick up to 4 in-stock products excluding current cart SKUs
+            fallback_qs = Product.objects.filter(stock__gt=0).exclude(sku__in=cart_exclude).order_by('-stock', '-id')[:4]
+            complete_set = list(fallback_qs)
+    except Exception:
+        # Any error reading Recommendation table should not block the cart view; use cheap fallback
+        try:
+            fallback_qs = Product.objects.filter(stock__gt=0).exclude(sku__in=cart_exclude).order_by('-stock', '-id')[:4]
+            complete_set = list(fallback_qs)
+        except Exception:
+            complete_set = []
     return render(request, 'storefront/cart.html', {
         'cart_items': cart_items,
         'total_price': total_price,
@@ -490,6 +584,43 @@ def checkout(request):
             messages.error(request, "Please provide shipping address and payment method.")
             return redirect('storefront:checkout')
 
+        # If paying by card (simple server-side validation), ensure basic card
+        # fields look valid. We do NOT store card data — this is only to provide
+        # basic client/server validation for the project exercise.
+        if payment_method.lower() == 'card' or payment_method == 'Card':
+            card_name = request.POST.get('card_name', '').strip()
+            card_number = request.POST.get('card_number', '').replace(' ', '')
+            card_expiry = request.POST.get('card_expiry', '').strip()
+            card_cvv = request.POST.get('card_cvv', '').strip()
+
+            # Basic validations
+            if not card_name:
+                messages.error(request, 'Please enter the name on the card.')
+                return redirect('storefront:checkout')
+            if not (card_number.isdigit() and len(card_number) == 16):
+                messages.error(request, 'Card number must be 16 digits.')
+                return redirect('storefront:checkout')
+            if not (card_cvv.isdigit() and len(card_cvv) == 3):
+                messages.error(request, 'CVV must be a 3-digit number.')
+                return redirect('storefront:checkout')
+            # expiry MM/YY
+            try:
+                parts = card_expiry.split('/')
+                if len(parts) != 2:
+                    raise ValueError('bad format')
+                mm = int(parts[0])
+                yy = int(parts[1])
+                if mm < 1 or mm > 12:
+                    raise ValueError('bad month')
+                year = 2000 + yy if yy < 100 else yy
+                now = datetime.utcnow()
+                if year < now.year or (year == now.year and mm < now.month):
+                    messages.error(request, 'Card has expired.')
+                    return redirect('storefront:checkout')
+            except Exception:
+                messages.error(request, 'Expiry must be MM/YY and not expired.')
+                return redirect('storefront:checkout')
+
         with transaction.atomic():
             order = Order.objects.create(
                 user=request.user,
@@ -515,42 +646,25 @@ def checkout(request):
         messages.success(request, "Order placed successfully!")
         return redirect('storefront:order_placed', order_id=order.id)
 
+    # If we don't have any ML-based suggestions, provide a cheap fallback so the UI
+    # always has a 'Complete the set' section to show.
+    if not complete_set:
+        try:
+            cart_exclude = set(cart_skus)
+            fallback_qs = Product.objects.filter(stock__gt=0).exclude(sku__in=cart_exclude).order_by('-stock', '-id')[:4]
+            complete_set = list(fallback_qs)
+        except Exception:
+            complete_set = []
+
     return render(request, 'storefront/checkout.html', {
         'cart_items': cart_items,
         'total_price': total_price,
         'total_cents': int(total_price * 100),
-        'stripe_publishable_key': getattr(settings, 'STRIPE_PUBLISHABLE_KEY', ''),
         'complete_the_set': complete_set,
     })
 
 
-@csrf_exempt
-@require_POST
-def create_payment_intent(request):
-    """Create a minimal Stripe PaymentIntent and return client_secret.
-    Expects JSON body: {"amount": <cents>}.
-    Requires STRIPE_SECRET_KEY to be set in settings (or will return error).
-    """
-    secret = getattr(settings, 'STRIPE_SECRET_KEY', None)
-    if not secret:
-        return JsonResponse({'error': 'Stripe secret key not configured.'}, status=400)
-    stripe.api_key = secret
-    try:
-        payload = json.loads(request.body.decode('utf-8') or '{}')
-    except Exception:
-        payload = {}
-    amount = int(payload.get('amount') or 0)
-    if amount <= 0:
-        return JsonResponse({'error': 'Invalid amount'}, status=400)
-    try:
-        intent = stripe.PaymentIntent.create(
-            amount=amount,
-            currency='usd',
-            automatic_payment_methods={'enabled': True},
-        )
-        return JsonResponse({'clientSecret': intent.client_secret})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+# Payment intents removed — payment is handled by server-side checkout POST.
 
 # -----------------------------
 # ORDER CONFIRMATION
@@ -671,6 +785,60 @@ def recommendations(request):
             if slug and slug not in preferred_slugs:
                 preferred_slugs.append(slug)
 
+    # Determine if customer has profile fields filled which the ML model can use.
+    customer_has_profile = False
+    if customer:
+        profile_fields = (
+            getattr(customer, 'age', None),
+            getattr(customer, 'household_size', None),
+            getattr(customer, 'has_children', None),
+            getattr(customer, 'education', None),
+            getattr(customer, 'monthly_income', None),
+        )
+        customer_has_profile = any(f is not None and f != '' for f in profile_fields)
+
+    # If the model predicted a category and customer has profile data, prefer ML first.
+    products_list = []
+    recommendation_source = None
+    ml_based = False
+    if predicted_category and canonical_predicted and customer_has_profile:
+        try:
+            resolved_slug = canonical_predicted
+            ml_qs = (
+                Product.objects
+                .filter(stock__gt=0)
+                .filter(category_filter_q(resolved_slug))
+                .order_by('-stock', '-id')[:8]
+            )
+        except Exception:
+            ml_qs = []
+        if ml_qs:
+            products_list = list(ml_qs)
+            display_predicted = display_category_name(resolved_slug)
+            recommendation_source = 'ml_predicted'
+            ml_based = True
+
+    # If the customer has explicit preferred categories, use them as the primary
+    # (unless ML already supplied results above).
+    if not products_list and preferred_slugs:
+        for slug in preferred_slugs:
+            resolved_slug = resolve_category_slug(slug) or slug
+            try:
+                pref_qs = (
+                    Product.objects
+                    .filter(stock__gt=0)
+                    .filter(category_filter_q(resolved_slug))
+                    .order_by('-stock', '-id')[:8]
+                )
+            except Exception:
+                pref_qs = []
+            if pref_qs:
+                products_list = list(pref_qs)
+                display_predicted = display_category_name(resolved_slug)
+                recommendation_source = 'profile'
+                ml_based = False
+                break
+
     # Build SKU signal from current cart and recent basket history snapshots
     basket_skus: list[str] = []
     try:
@@ -725,16 +893,16 @@ def recommendations(request):
             seen_ids.add(sku)
             ordered_ids.append(sku)
 
-    products_list = []
-    recommendation_source = None
-    if ordered_ids:
+    # If profile already produced results above, keep them. Otherwise consider
+    # association-rules suggestions derived from basket history.
+    if not products_list and ordered_ids:
         qs = Product.objects.filter(stock__gt=0, sku__in=ordered_ids)
         lookup = {prod.sku: prod for prod in qs}
         products_list = [lookup[sku] for sku in ordered_ids if sku in lookup]
         if products_list:
             recommendation_source = 'association_rules'
 
-    ml_based = bool(ordered_ids)
+    ml_based = bool(ordered_ids) and (recommendation_source == 'association_rules')
 
     # Prioritize ML predicted category for cold-starts: try the model's prediction first,
     # then fall back to explicit profile preferences.

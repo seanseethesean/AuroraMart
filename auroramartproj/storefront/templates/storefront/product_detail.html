@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %}{{ product.name }} — AuroraMart{% endblock %}
 {% block content %}
-{% static 'storefront/img/product_placeholder.svg' as product_placeholder %}
+{% static 'storefront/images/product_placeholder.svg' as product_placeholder %}
 <div class="page stack">
   <div class="product-grid">
     <div class="gallery">
@@ -11,7 +11,7 @@
           <div class="product-badge">Last pieces</div>
         {% endif %}
         <div style="text-align:center; margin-bottom:12px;">
-          <img src="{{ product.display_image|default:product_placeholder }}" alt="{{ product.name }}" style="width:100%; max-width:420px; height:auto; border-radius:8px;">
+          <img src="{{ product.display_image }}" alt="{{ product.name }}" style="width:100%; max-width:420px; height:auto; border-radius:8px;">
         </div>
       </div>
     </div>
@@ -53,7 +53,7 @@
       <div class="fbt-grid">
         {% for rec in frequently_bought %}
           <a class="fbt-card" href="{% url 'storefront:product_detail' rec.id %}">
-            <img src="{{ rec.display_image|default:product_placeholder }}" alt="{{ rec.name }}">
+            <img src="{{ rec.display_image }}" alt="{{ rec.name }}">
             <div class="fbt-title">{{ rec.name }}</div>
             {% if rec.discount_percent %}
               <div class="fbt-price">${{ rec.get_display_price }}</div>
@@ -61,7 +61,6 @@
             {% else %}
               <div class="fbt-price">${{ rec.price }}</div>
             {% endif %}
-            <div class="fbt-meta">{{ rec.category }}</div>
           </a>
         {% endfor %}
       </div>

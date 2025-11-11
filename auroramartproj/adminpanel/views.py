@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
+import logging
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -38,10 +39,17 @@ def login_view(request):
         email = request.POST.get("email")
         password = request.POST.get("password")
 
-        try:
-            user = User.objects.get(email__iexact=email)
-        except User.DoesNotExist:
-            user = None
+        # Be tolerant of duplicate User rows with the same email. In some
+        # datasets (or from import mistakes) multiple users may share an
+        # email address which would make User.objects.get(...) raise
+        # MultipleObjectsReturned. Prefer the oldest user (by id) in that
+        # case and log a warning so admins can clean up the duplicates.
+        user = None
+        if email:
+            qs = User.objects.filter(email__iexact=email).order_by('id')
+            if qs.count() > 1:
+                logging.getLogger(__name__).warning("Multiple User objects found for email=%s; using the first by id=%s", email, qs.first().id)
+            user = qs.first()
 
         if user is not None:
             user = authenticate(request, username=user.username, password=password)
@@ -82,8 +90,16 @@ def dashboard(request):
 
 @staff_required
 def product_list(request):
-    products = Product.objects.all()
-    return render(request, "adminpanel/product/product_list.html", {"products": products})
+    # Add simple search/filter support via ?q= querystring. Search matches SKU, name, category, or description.
+    q = (request.GET.get('q') or '').strip()
+    products_qs = Product.objects.all().order_by('id')
+    if q:
+        from django.db.models import Q
+        products_qs = products_qs.filter(
+            Q(name__icontains=q) | Q(sku__icontains=q) | Q(category__icontains=q) | Q(description__icontains=q)
+        )
+    products = list(products_qs)
+    return render(request, "adminpanel/product/product_list.html", {"products": products, 'q': q})
 
 
 @staff_required
@@ -196,11 +212,8 @@ def order_list(request):
             order.customer_profile = order.user.customer
         except Customer.DoesNotExist:
             order.customer_profile = None
-        # Map internal order.status to admin-friendly status labels
-        if getattr(order, 'status', None) == Order.STATUS_DELIVERED:
-            order.display_status = 'Completed'
-        else:
-            order.display_status = 'In Progress'
+        # Expose the raw status so templates can show specific labels
+        order.display_status = getattr(order, 'status', None) or ''
 
     context = {
         'orders': orders,
@@ -214,12 +227,41 @@ def order_list(request):
 def order_detail(request, pk):
     order = get_object_or_404(Order, pk=pk)
     items = order.items.select_related('product')
+
+    # Handle status update POST from the admin UI
+    if request.method == 'POST':
+        new_status = (request.POST.get('status') or '').strip()
+        valid_statuses = [s[0] for s in Order.STATUS_CHOICES]
+        if new_status and new_status in valid_statuses:
+            # Admins are allowed to set Processing/Shipped/Out for Delivery.
+            # Delivered must be confirmed by the customer, so disallow admins from setting it here.
+            if new_status == Order.STATUS_DELIVERED:
+                messages.error(request, 'Delivered status must be set by the customer. Admins cannot mark an order as Delivered.')
+            else:
+                # Clear delivered_at when moving away from delivered
+                order.status = new_status
+                order.delivered_at = None
+                order.save(update_fields=['status', 'delivered_at'])
+                messages.success(request, f"Order status updated to '{new_status}'.")
+                return redirect('adminpanel:order_detail', pk=order.pk)
+        else:
+            messages.error(request, 'Invalid status selected.')
+
     # Admin-facing status label
     if getattr(order, 'status', None) == Order.STATUS_DELIVERED:
         display_status = 'Completed'
     else:
         display_status = 'In Progress'
-    return render(request, 'adminpanel/order/order_detail.html', {'order': order, 'items': items, 'display_status': display_status})
+
+    # Admins may change Processing / Shipped / Out for Delivery, but Delivered should be set by the customer.
+    # Provide a reduced set for the edit form (exclude Delivered) so admins can't mark orders as Delivered.
+    status_choices_for_form = [s for s in Order.STATUS_CHOICES if s[0] != Order.STATUS_DELIVERED]
+    return render(request, 'adminpanel/order/order_detail.html', {
+        'order': order,
+        'items': items,
+        'display_status': display_status,
+        'status_choices': status_choices_for_form,
+    })
 
 
 @staff_required

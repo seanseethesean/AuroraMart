@@ -1,15 +1,15 @@
 {% extends "storefront/base.html" %}
+{% load static %}
+{% static 'storefront/images/product_placeholder.svg' as product_placeholder %}
 {% block title %}Your Cart — AuroraMart{% endblock %}
 {% block content %}
 <h2>Your Cart</h2>
 {% if cart_items %}
   <div class="page">
   <div class="section">
-    {% for item in cart_items %}
+      {% for item in cart_items %}
       <div class="card" style="text-align:left; display:flex; align-items:center; gap:12px;">
-        {% if item.product.image %}
-          <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" style="width:96px; height:96px; object-fit:cover; border-radius:8px;">
-        {% endif %}
+        <img src="{{ item.product.display_image }}" alt="{{ item.product.name }}" style="width:96px; height:96px; object-fit:cover; border-radius:8px;">
         <div style="flex:1">
           <strong>{{ item.product.name }}</strong><br>
           <small class="muted">In stock: {{ item.product.stock }}</small>
@@ -63,20 +63,19 @@
   </div>
   </div>
   {% if complete_the_set %}
-  <div class="section">
+  <div class="section" style="max-width:960px; margin:0 auto;">
     <h3>Complete the set</h3>
-    <p class="muted">Customers often add these to the same basket.</p>
-    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+    <p class="muted" style="max-width:960px; margin:0;">Customers often add these to the same basket.</p>
+  <div class="fbt-grid">
       {% for rec in complete_the_set %}
-      <a class="card" href="{% url 'storefront:product_detail' rec.id %}">
-        {% if rec.image %}
-          <img src="{{ rec.image.url }}" alt="{{ rec.name }}" style="width:100%; height:140px; object-fit:cover; border-radius:8px; margin-bottom:8px;">
-        {% endif %}
-        <strong>{{ rec.name }}</strong>
+      <a class="fbt-card" href="{% url 'storefront:product_detail' rec.id %}">
+        <img src="{{ rec.display_image }}" alt="{{ rec.name }}">
+        <div class="fbt-title">{{ rec.name }}</div>
         {% if rec.discount_percent %}
-          <small class="text-muted"><span class="discounted-price">${{ rec.get_display_price }}</span> <span class="original-price">${{ rec.price }}</span></small>
+          <div class="fbt-price">${{ rec.get_display_price }}</div>
+          <div class="fbt-meta original-price">${{ rec.price }}</div>
         {% else %}
-          <small class="text-muted">${{ rec.price }}</small>
+          <div class="fbt-price">${{ rec.price }}</div>
         {% endif %}
       </a>
       {% endfor %}
