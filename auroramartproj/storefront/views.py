@@ -343,12 +343,22 @@ def product_list(request):
 # -----------------------------
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk)
-    suggestions = (
-        Product.objects
-        .filter(stock__gt=0, category=product.category)
-        .exclude(pk=product.pk)
-        .order_by('-stock', '-id')[:4]
-    )
+    # Try to surface association-rule suggestions using the viewed product as the seed SKU.
+    suggestions = []
+    try:
+        if getattr(product, 'sku', None):
+            suggestions = recommend_products_for_skus([product.sku], exclude_skus=[product.sku], limit=4)
+    except Exception:
+        # Fall back to same-category picks if the association model fails or is missing.
+        suggestions = []
+
+    if not suggestions:
+        suggestions = (
+            Product.objects
+            .filter(stock__gt=0, category=product.category)
+            .exclude(pk=product.pk)
+            .order_by('-stock', '-id')[:4]
+        )
     return render(request, 'storefront/product_detail.html', {
         'product': product,
         'frequently_bought': list(suggestions),

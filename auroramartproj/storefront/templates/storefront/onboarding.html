@@ -6,12 +6,10 @@
   <h2>Complete Your Profile</h2>
   <p class="subtitle">Help us personalize your shopping experience</p>
 
-  {% if form.errors %}
+  {% if form.non_field_errors %}
     <div class="error-message">
-      {% for field, errors in form.errors.items %}
-        {% for error in errors %}
-          {{ error }}
-        {% endfor %}
+      {% for error in form.non_field_errors %}
+        {{ error }}
       {% endfor %}
     </div>
   {% endif %}
@@ -23,16 +21,25 @@
     <div class="section">
       <label>Age</label><br>
       {{ form.age }}
+      {% for error in form.age.errors %}
+        <div class="field-errors">{{ error }}</div>
+      {% endfor %}
     </div>
     
     <div class="section">
       <label>Gender</label><br>
       {{ form.gender }}
+      {% for error in form.gender.errors %}
+        <div class="field-errors">{{ error }}</div>
+      {% endfor %}
     </div>
     
     <div class="section">
       <label>Preferred Categories (select up to 3)</label><br>
       {{ form.preferred_categories }}
+      {% for error in form.preferred_categories.errors %}
+        <div class="field-errors">{{ error }}</div>
+      {% endfor %}
     </div>
 
     <div class="section" style="margin-top:32px;">
@@ -45,21 +52,33 @@
         <div>
           <label>Employment Status</label><br>
           {{ form.employment_status }}
+          {% for error in form.employment_status.errors %}
+            <div class="field-errors">{{ error }}</div>
+          {% endfor %}
         </div>
         
         <div>
           <label>Occupation</label><br>
           {{ form.occupation }}
+          {% for error in form.occupation.errors %}
+            <div class="field-errors">{{ error }}</div>
+          {% endfor %}
         </div>
         
         <div>
           <label>Education Level</label><br>
           {{ form.education }}
+          {% for error in form.education.errors %}
+            <div class="field-errors">{{ error }}</div>
+          {% endfor %}
         </div>
         
         <div>
           <label>Household Size</label><br>
           {{ form.household_size }}
+          {% for error in form.household_size.errors %}
+            <div class="field-errors">{{ error }}</div>
+          {% endfor %}
         </div>
         
         <div>
@@ -68,11 +87,17 @@
             {{ form.has_children }}
             <span>Yes</span>
           </label>
+          {% for error in form.has_children.errors %}
+            <div class="field-errors">{{ error }}</div>
+          {% endfor %}
         </div>
         
         <div>
           <label>Monthly Income (SGD)</label><br>
           {{ form.monthly_income }}
+          {% for error in form.monthly_income.errors %}
+            <div class="field-errors">{{ error }}</div>
+          {% endfor %}
         </div>
       </div>
     </div>
@@ -92,6 +117,8 @@
   input[type="checkbox"] { width: auto; }
   ul { list-style: none; padding: 0; }
   .muted { color: #6b7280; }
+  .error-message { background: #fee2e2; color: #b91c1c; padding: 16px; border-radius: 10px; margin-bottom: 20px; font-size: 1rem; font-weight: 600; }
+  .field-errors { color: #b91c1c; font-size: 1rem; margin-top: 8px; font-weight: 600; }
   @media (max-width: 640px) {
     .grid { grid-template-columns: 1fr; }
   }
