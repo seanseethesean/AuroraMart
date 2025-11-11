@@ -9,36 +9,25 @@
   .section{margin-bottom:14px}
   .chip.primary{padding:10px 14px;border-radius:8px;background:#111827;color:#fff;border:1px solid #111827}
   .link{color:#0ea5e9;text-decoration:none}
-  .auth-card input{width:100%;padding:10px;border-radius:8px;border:1px solid #d1d5db}
-  .error-message{background:#fee2e2;color:#b91c1c;padding:12px;border-radius:8px;margin-bottom:16px}
-  .field-errors{color:#b91c1c;font-size:0.875rem;margin-top:6px}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="auth-card">
   <h2>Login</h2>
-  {% if form.non_field_errors %}
-    <div class="error-message">
-      {% for error in form.non_field_errors %}
-        {{ error }}
-      {% endfor %}
-    </div>
-  {% endif %}
-  <form method="post" novalidate>
+  <form method="post">
     {% csrf_token %}
     <div class="section">
       <label>Username</label><br>
-      {{ form.username }}
-      {% for error in form.username.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+      <input type="text" name="username" required>
     </div>
     <div class="section">
       <label>Password</label><br>
-      {{ form.password }}
-      {% for error in form.password.errors %}<div class="field-errors">{{ error }}</div>{% endfor %}
+      <input type="password" name="password" required>
     </div>
     <button class="chip primary auth-button" type="submit">Login</button>
   </form>
+  <p><a href="{% url 'storefront:password_reset' %}">Forgot password?</a></p>
   <p>Don't have an account? Register
     <a href="{% url 'storefront:register' %}" class="link">here</a>.
   </p>
