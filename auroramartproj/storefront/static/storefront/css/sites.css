@@ -87,6 +87,7 @@ a {
   background: #fff;
   font-weight: 600;
 }
+.nav-links button.chip, .nav-links a.chip { font-size: 16px; line-height: 1; }
 .chip.primary {
   background: var(--accent);
   border-color: var(--accent);

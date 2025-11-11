@@ -22,12 +22,6 @@
       <div class="stat-value">{{ total_inventory }}</div>
     </div>
   </div>
-  <div class="card card-stat">
-    <div>
-      <h5 class="text-muted">AI Insights</h5>
-      <div class="stat-value">Coming Soon</div>
-    </div>
-  </div>
 </div>
 
 <div class="mt-4">
@@ -53,11 +47,17 @@
             <td>${{ order.total_price }}</td>
             <td>{{ order.date_ordered|date:"M d, Y" }}</td>
             <td>
-              {% if order.status == 'Delivered' %}
-                <span class="status-badge completed">Completed</span>
-              {% else %}
-                <span class="status-badge in-progress">In Progress</span>
-              {% endif %}
+              {% with s=order.status|lower %}
+                {% if s == 'completed' or s == 'delivered' %}
+                  <span class="badge badge--completed">Completed</span>
+                {% elif s in 'in progress,processing,shipped,out for delivery' %}
+                  <span class="badge badge--inprogress">In Progress</span>
+                {% elif s == 'cancelled' %}
+                  <span class="badge badge--cancelled">Cancelled</span>
+                {% else %}
+                  <span class="badge badge--inactive">{{ order.status }}</span>
+                {% endif %}
+              {% endwith %}
             </td>
             <td>
               <a href="{% url 'adminpanel:order_detail' order.id %}" class="btn btn-sm btn-primary">View</a>
