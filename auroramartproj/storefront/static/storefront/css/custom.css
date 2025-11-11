@@ -58,6 +58,16 @@
   transition: transform 0.2s, padding 0.2s;
 }
 
+/* Ensure form-based nav buttons match anchor chip styling (font / size consistency) */
+.nav-links form > .chip {
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 8px 12px;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+}
+
 .auth-button:active {
   transform: scale(1.05);
   padding: 12px 16px;
