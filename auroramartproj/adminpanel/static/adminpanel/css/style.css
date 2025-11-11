@@ -47,3 +47,14 @@ body{
   background: linear-gradient(180deg, #bfffd3 0%, #86efac 100%);
   color: #064e3b;
 }
+
+/* Unified pastel badges for admin panels */
+.badge{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .6rem;border-radius:9999px;font-weight:700;font-size:.8rem;line-height:1;}
+.badge--inprogress{background:#dbeafe;color:#1e3a8a;}  /* light blue / navy */
+.badge--completed{background:#dcfce7;color:#065f46;}   /* mint / deep green */
+.badge--cancelled{background:#fee2e2;color:#7f1d1d;}   /* rose / maroon */
+.badge--active{background:#e0f2fe;color:#075985;}      /* sky */
+.badge--inactive{background:#e5e7eb;color:#374151;}    /* gray */
+
+/* Ensure these new badge rules override Bootstrap defaults when loaded */
+.badge, .badge * { box-sizing: border-box; }

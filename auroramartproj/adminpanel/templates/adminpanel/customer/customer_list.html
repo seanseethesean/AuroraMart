@@ -26,9 +26,11 @@
             <td>{{ customer.user.email }}</td>
             <td>{{ customer.phone|default:"-" }}</td>
             <td>
-              <span class="badge {% if customer.user.is_active %}bg-success{% else %}bg-danger{% endif %}">
-                {{ customer.user.is_active|yesno:"Active,Inactive" }}
-              </span>
+              {% if customer.user.is_active %}
+                <span class="badge badge--active">Active</span>
+              {% else %}
+                <span class="badge badge--inactive">Inactive</span>
+              {% endif %}
             </td>
             <td>
               <a href="{% url 'adminpanel:customer_detail' customer.id %}" class="btn btn-sm btn-accent text-white">View</a>
