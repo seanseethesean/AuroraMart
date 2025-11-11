@@ -32,4 +32,6 @@ urlpatterns = [
     path('password_change/done/', auth_views.PasswordChangeDoneView.as_view(
         template_name='storefront/auth/password_change_done.html'
     ), name='password_change_done'),
+    # Stripe payment intent endpoint used by checkout.js
+    path('create-payment-intent/', views.create_payment_intent, name='create_payment_intent'),
 ]
