@@ -785,17 +785,35 @@ def recommendations(request):
             if slug and slug not in preferred_slugs:
                 preferred_slugs.append(slug)
 
-    # Determine if customer has profile fields filled which the ML model can use.
+    # Determine if customer has enough structured profile data for the ML model.
+    # Require several non-empty features so we skip DT predictions for near-empty profiles.
     customer_has_profile = False
     if customer:
-        profile_fields = (
-            getattr(customer, 'age', None),
-            getattr(customer, 'household_size', None),
-            getattr(customer, 'has_children', None),
-            getattr(customer, 'education', None),
-            getattr(customer, 'monthly_income', None),
-        )
-        customer_has_profile = any(f is not None and f != '' for f in profile_fields)
+        feature_candidates = {
+            'age': getattr(customer, 'age', None),
+            'gender': getattr(customer, 'gender', None),
+            'employment_status': getattr(customer, 'employment_status', None),
+            'occupation': getattr(customer, 'occupation', None),
+            'education': getattr(customer, 'education', None),
+            'household_size': getattr(customer, 'household_size', None),
+            'has_children': getattr(customer, 'has_children', None),
+            'monthly_income': getattr(customer, 'monthly_income', None),
+        }
+
+        def _is_meaningful(name, value):
+            if value in (None, '', [], (), {}):
+                return False
+            if name in {'age', 'household_size'}:
+                try:
+                    return int(value) > 0
+                except (TypeError, ValueError):
+                    return False
+            if name == 'has_children':
+                return bool(value)
+            return True
+
+        filled_features = sum(1 for key, val in feature_candidates.items() if _is_meaningful(key, val))
+        customer_has_profile = filled_features >= 3
 
     # If the model predicted a category and customer has profile data, prefer ML first.
     products_list = []
@@ -908,7 +926,7 @@ def recommendations(request):
     # Prioritize ML predicted category for cold-starts: try the model's prediction first,
     # then fall back to explicit profile preferences.
     fallback_sources = []
-    if canonical_predicted:
+    if canonical_predicted and customer_has_profile:
         fallback_sources.append(canonical_predicted)
     for slug in preferred_slugs:
         if slug and slug not in fallback_sources:
