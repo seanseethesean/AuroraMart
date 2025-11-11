@@ -145,8 +145,9 @@ LOGOUT_REDIRECT_URL = '/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Development email backend: print emails to console
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Development email backend: write emails to files under BASE_DIR/tmp/emails so you can inspect
+# reset emails during development. Change back to an SMTP backend for real delivery.
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 DEFAULT_FROM_EMAIL = 'no-reply@auroramart.com'
 
 # Optional: support a file-based backend for development that writes
@@ -164,3 +165,31 @@ except Exception:
 # Example (uncomment to use file backend during development):
 # EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 # EMAIL_FILE_PATH = BASE_DIR / 'tmp' / 'emails'
+
+# -----------------------------------------------------------------------------
+# Allow overriding email backend via environment variables for dev or CI.
+# If EMAIL_HOST is set, we configure SMTP using the provided environment
+# variables. Otherwise, keep the file-based backend for safe local dev.
+# Recommended env vars (bash):
+#   export EMAIL_HOST=smtp.gmail.com
+#   export EMAIL_PORT=587
+#   export EMAIL_USE_TLS=1
+#   export EMAIL_HOST_USER='your@email'
+#   export EMAIL_HOST_PASSWORD='app-password'
+#   export DEFAULT_FROM_EMAIL='no-reply@auroramart.com'
+# -----------------------------------------------------------------------------
+import os
+
+if os.environ.get('EMAIL_HOST'):
+    # Configure SMTP from environment
+    EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+    EMAIL_HOST = os.environ.get('EMAIL_HOST')
+    EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+    EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', '1') not in ('0', 'false', 'False')
+    EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', '0') not in ('0', 'false', 'False')
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+    DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', DEFAULT_FROM_EMAIL)
+else:
+    # Keep file backend in development by default (writes to tmp/emails)
+    EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.filebased.EmailBackend')

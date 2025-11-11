@@ -15,6 +15,20 @@
 {% block content %}
 <div class="auth-card">
   <h2>Login</h2>
+  {% if messages %}
+    <div class="section">
+      {# show only the first message to avoid duplicates #}
+      {% for message in messages %}
+        {% if forloop.first %}
+          {% if 'error' in message.tags %}
+            <div class="muted" style="color:#dc2626; margin-bottom:8px;">{{ message }}</div>
+          {% else %}
+            <div class="muted" style="color:#064e3b; margin-bottom:8px;">{{ message }}</div>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
   <form method="post">
     {% csrf_token %}
     <div class="section">
@@ -27,7 +41,6 @@
     </div>
     <button class="chip primary auth-button" type="submit">Login</button>
   </form>
-  <p><a href="{% url 'storefront:password_reset' %}">Forgot password?</a></p>
   <p>Don't have an account? Register
     <a href="{% url 'storefront:register' %}" class="link">here</a>.
   </p>

@@ -131,9 +131,12 @@ def load_models() -> dict[str, Optional[Any]]:
         )
         return loaded
 
+    # Use the filenames provided by the course (professor):
+    # - b2c_customers_100.joblib (decision tree classifier)
+    # - b2c_products_500_transactions_50k.joblib (association rules dataframe)
     artefacts = {
-        'decision_tree': models_dir / 'decision_tree.joblib',
-        'association_rules': models_dir / 'association_rules.joblib',
+        'decision_tree': models_dir / 'b2c_customers_100.joblib',
+        'association_rules': models_dir / 'b2c_products_500_transactions_50k.joblib',
     }
 
     for key, path in artefacts.items():

@@ -797,6 +797,25 @@ class StorefrontLoginView(LoginView):
         messages.success(self.request, "Logged in successfully.")
         return response
 
+    def form_invalid(self, form):
+        """Provide clearer messages for invalid login attempts.
+
+        If the username does not exist, show a specific message. Otherwise show
+        a generic invalid credentials message.
+        """
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        username = self.request.POST.get('username')
+        if username:
+            try:
+                User.objects.get(username=username)
+                messages.error(self.request, 'Invalid username/password combination.')
+            except User.DoesNotExist:
+                messages.error(self.request, 'User not found. Please register or check your username.')
+        else:
+            messages.error(self.request, 'Please enter your username.')
+        return super().form_invalid(form)
+
 
 class StorefrontLogoutView(LogoutView):
     next_page = 'storefront:home'

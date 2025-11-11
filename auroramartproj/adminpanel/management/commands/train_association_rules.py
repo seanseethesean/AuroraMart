@@ -80,8 +80,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--output",
             dest="output",
-            default="adminpanel/mlmodels/association_rules.joblib",
-            help="Destination path for the trained recommender (default: adminpanel/mlmodels/association_rules.joblib).",
+            default="adminpanel/mlmodels/b2c_products_500_transactions_50k.joblib",
+            help="Destination path for the trained recommender (default: adminpanel/mlmodels/b2c_products_500_transactions_50k.joblib).",
         )
         parser.add_argument(
             "--summary",
