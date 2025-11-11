@@ -879,7 +879,7 @@ def recommendations(request):
         basket_skus = [sku for sku in dict.fromkeys([str(sku).strip() for sku in basket_skus if sku])]
         basket_skus = basket_skus[:50]
 
-    recommended_product_ids = []
+    recommended_product_ids: list[str] = []
     if basket_skus:
         raw_ids = _cached_rule_suggestions(tuple(basket_skus), 12)
         if raw_ids:
@@ -895,14 +895,15 @@ def recommendations(request):
 
     # If profile already produced results above, keep them. Otherwise consider
     # association-rules suggestions derived from basket history.
-    if not products_list and ordered_ids:
+    association_products: list[Product] = []
+    if ordered_ids:
         qs = Product.objects.filter(stock__gt=0, sku__in=ordered_ids)
         lookup = {prod.sku: prod for prod in qs}
-        products_list = [lookup[sku] for sku in ordered_ids if sku in lookup]
-        if products_list:
-            recommendation_source = 'association_rules'
+        association_products = [lookup[sku] for sku in ordered_ids if sku in lookup]
 
-    ml_based = bool(ordered_ids) and (recommendation_source == 'association_rules')
+    if association_products:
+        products_list = association_products
+        recommendation_source = 'association_rules'
 
     # Prioritize ML predicted category for cold-starts: try the model's prediction first,
     # then fall back to explicit profile preferences.
@@ -938,6 +939,9 @@ def recommendations(request):
                 else:
                     recommendation_source = 'fallback'
                 break
+
+    # Flag whether the final recommendations came from ML sources (DT or association rules)
+    ml_based = recommendation_source in {'ml_predicted', 'association_rules'}
 
     # Align displayed predicted category with the chosen recommendations to avoid mismatches
     try:

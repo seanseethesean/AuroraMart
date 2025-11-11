@@ -152,6 +152,151 @@ def load_models() -> dict[str, Optional[Any]]:
     return loaded
 
 
+def _canonical_label(value: Any, alias_map: dict[str, str]) -> str:
+    if value is None:
+        return ''
+    text = str(value).strip()
+    if not text:
+        return ''
+    lowered = text.lower()
+    if lowered in alias_map:
+        return alias_map[lowered]
+    if text in alias_map:
+        return alias_map[text]
+    return text
+
+
+def _parse_income_band(value: Any) -> float:
+    if value is None:
+        return 0.0
+    if isinstance(value, (int, float)):
+        return float(value)
+    text = str(value).strip()
+    if not text:
+        return 0.0
+
+    cleaned = (
+        text.replace('SGD', '')
+        .replace('$', '')
+        .replace(',', '')
+        .replace('–', '-')
+        .replace('—', '-')
+        .replace('to', '-')
+        .replace('per', '')
+        .replace('month', '')
+        .strip()
+    )
+    cleaned = cleaned.replace(' ', '')
+    lowered = cleaned.lower()
+
+    income_map = {
+        '0-2000': 1000.0,
+        '2001-4000': 3000.0,
+        '4001-6000': 5000.0,
+        '6001-8000': 7000.0,
+        '8001-10000': 9000.0,
+        '10001+': 12000.0,
+        '10001-12000': 11000.0,
+        '12001-14000': 13000.0,
+        '14001-16000': 15000.0,
+        '16001-18000': 17000.0,
+        '18001-20000': 19000.0,
+    }
+
+    if lowered in income_map:
+        return income_map[lowered]
+
+    if lowered.endswith('+'):
+        base = lowered[:-1]
+        try:
+            number = float(base)
+            return number + 1000.0
+        except (TypeError, ValueError):
+            return 0.0
+
+    if '-' in lowered:
+        left, right = lowered.split('-', 1)
+        try:
+            lo = float(left)
+            hi = float(right)
+            if hi <= 0:
+                return max(lo, 0.0)
+            return max((lo + hi) / 2.0, 0.0)
+        except (TypeError, ValueError):
+            pass
+
+    try:
+        return max(float(lowered), 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _bool_to_int(value: Any) -> int:
+    if value in (None, '', [], (), {}):
+        return 0
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {'1', 'true', 'yes', 'y', 't'}:
+            return 1
+        if lowered in {'0', 'false', 'no', 'n', 'f'}:
+            return 0
+    return 1 if bool(value) else 0
+
+
+def _canonicalize_occupation(value: Any) -> str:
+    if value is None:
+        return ''
+    text = str(value).strip()
+    if not text:
+        return ''
+    lowered = text.lower()
+    occupation_aliases = {
+        'admin': 'Admin',
+        'administrator': 'Admin',
+        'administration': 'Admin',
+        'operations': 'Admin',
+        'office': 'Admin',
+        'education': 'Education',
+        'teacher': 'Education',
+        'teaching': 'Education',
+        'lecturer': 'Education',
+        'sales': 'Sales',
+        'salesperson': 'Sales',
+        'marketing': 'Sales',
+        'service': 'Service',
+        'customer service': 'Service',
+        'support': 'Service',
+        'hospitality': 'Service',
+        'skilled trades': 'Skilled Trades',
+        'technician': 'Skilled Trades',
+        'mechanic': 'Skilled Trades',
+        'construction': 'Skilled Trades',
+        'craftsman': 'Skilled Trades',
+        'tech': 'Tech',
+        'technology': 'Tech',
+        'developer': 'Tech',
+        'it': 'Tech',
+        'software': 'Tech',
+        'engineer': 'Tech',
+        'programmer': 'Tech',
+    }
+    if lowered in occupation_aliases:
+        return occupation_aliases[lowered]
+    return text.title()
+
+
+def _safe_int(value: Any, default: int = 0) -> int:
+    if value in (None, '', [], (), {}):
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        try:
+            return int(float(str(value).strip()))
+        except (TypeError, ValueError):
+            return default
+
+
 def customer_to_feature_df(customer, expected_columns: Optional[List[str]] = None) -> pd.DataFrame:
     """Convert a Customer model instance to a DataFrame matching the DT training features.
 
@@ -167,15 +312,66 @@ def customer_to_feature_df(customer, expected_columns: Optional[List[str]] = Non
 
     # Base raw features we can safely extract from typical Customer models.
     # Add or adjust these keys to match the attributes on your Customer model.
+    gender_aliases = {
+        'm': 'Male',
+        'male': 'Male',
+        'f': 'Female',
+        'female': 'Female',
+        'o': 'Other',
+        'other': 'Other',
+    }
+
+    employment_aliases = {
+        'ft': 'Full-time',
+        'full-time': 'Full-time',
+        'fulltime': 'Full-time',
+        'full time': 'Full-time',
+        'pt': 'Part-time',
+        'part-time': 'Part-time',
+        'parttime': 'Part-time',
+        'part time': 'Part-time',
+        'se': 'Self-employed',
+        'self-employed': 'Self-employed',
+        'self employed': 'Self-employed',
+        'st': 'Student',
+        'student': 'Student',
+        'rt': 'Retired',
+        'retired': 'Retired',
+    }
+
+    education_aliases = {
+        'hs': 'Secondary',
+        'highschool': 'Secondary',
+        'high school': 'Secondary',
+        'secondary': 'Secondary',
+        'dp': 'Diploma',
+        'diploma': 'Diploma',
+        'bd': 'Bachelor',
+        'bachelor': 'Bachelor',
+        'ms': 'Master',
+        'master': 'Master',
+        'dr': 'Doctorate',
+        'doctorate': 'Doctorate',
+        'phd': 'Doctorate',
+    }
+
+    raw_gender = getattr(customer, 'gender', '')
+    raw_employment = getattr(customer, 'employment_status', '')
+    raw_education = getattr(customer, 'education', '')
+    raw_income = getattr(customer, 'monthly_income', None)
+    raw_household = getattr(customer, 'household_size', None)
+    raw_children = getattr(customer, 'has_children', None)
+    raw_occupation = getattr(customer, 'occupation', '')
+
     feat = {
-        'age': getattr(customer, 'age', 0) or 0,
-        'household_size': getattr(customer, 'household_size', 1) or 1,
-        'has_children': 1 if getattr(customer, 'has_children', False) else 0,
-        'gender': (getattr(customer, 'gender', '') or '').strip(),
-        'monthly_income': getattr(customer, 'monthly_income', 0) or 0,
-        'education': (getattr(customer, 'education', '') or '').strip(),
-        'occupation': (getattr(customer, 'occupation', '') or '').strip(),
-        'marital_status': (getattr(customer, 'marital_status', '') or '').strip(),
+        'age': _safe_int(getattr(customer, 'age', 0), default=0),
+        'household_size': _safe_int(raw_household, default=1),
+        'has_children': _bool_to_int(raw_children),
+        'monthly_income_sgd': _parse_income_band(raw_income),
+        'gender': _canonical_label(raw_gender, gender_aliases),
+        'employment_status': _canonical_label(raw_employment, employment_aliases),
+        'occupation': _canonicalize_occupation(raw_occupation),
+        'education': _canonical_label(raw_education, education_aliases),
     }
 
     base_df = pd.DataFrame([feat])
@@ -185,27 +381,28 @@ def customer_to_feature_df(customer, expected_columns: Optional[List[str]] = Non
         return base_df
 
     # Build a DataFrame that matches expected_columns (order and names).
-    out = pd.DataFrame(columns=expected_columns)
+    out = pd.DataFrame(0.0, index=[0], columns=expected_columns)
+    base_values = base_df.iloc[0].to_dict()
 
     for col in expected_columns:
-        if col in base_df.columns:
-            out.loc[0, col] = base_df.loc[0, col]
+        if col in base_values:
+            out.loc[0, col] = base_values[col]
             continue
 
         # Heuristic: treat columns like '<field>_<value>' as one-hot encodings
         if '_' in col:
-            field, _, val = col.partition('_')
-            if field in base_df.columns and isinstance(base_df.loc[0, field], str):
-                out.loc[0, col] = 1 if base_df.loc[0, field] == val else 0
+            field, sep, val = col.rpartition('_')
+            if sep and field in base_values:
+                source = base_values[field]
+                if isinstance(source, str):
+                    out.loc[0, col] = 1.0 if source.strip().lower() == val.strip().lower() else 0.0
+                else:
+                    out.loc[0, col] = 1.0 if str(source).strip().lower() == val.strip().lower() else 0.0
                 continue
 
-        # If column looks numeric, default to 0, otherwise empty/zero
-        out.loc[0, col] = 0
+        out.loc[0, col] = 0.0
 
-    # Ensure types (fill NaNs with zeros)
-    out = out.fillna(0)
-    # Reindex to ensure exact column order
-    out = out.reindex(columns=expected_columns)
+    out = out.fillna(0.0)
     return out
 
 
