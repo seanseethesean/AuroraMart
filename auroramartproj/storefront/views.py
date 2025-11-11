@@ -1,5 +1,6 @@
 from typing import Optional
 from functools import lru_cache
+import logging
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -602,8 +603,27 @@ def recommendations(request):
     except Exception:
         predicted_category = None
 
+    # Try to resolve the model's prediction to a canonical slug. The model may return
+    # a display label (e.g. 'Books') or a slug-like value; try several heuristics.
     canonical_predicted = resolve_category_slug(predicted_category)
     display_predicted = display_category_name(predicted_category)
+    if predicted_category and not canonical_predicted:
+        # Try matching against configured category labels (case-insensitive)
+        pred_text = str(predicted_category).strip()
+        for slug, label in CATEGORY_LABELS.items():
+            if pred_text.lower() == str(label).strip().lower():
+                canonical_predicted = slug
+                display_predicted = label
+                break
+    # If still unresolved, try matching by replacing common separators
+    if predicted_category and not canonical_predicted:
+        pred_text = str(predicted_category).lower().replace('&', 'and').replace('-', ' ').strip()
+        for slug, label in CATEGORY_LABELS.items():
+            lab_text = str(label).lower().replace('&', 'and').replace('-', ' ').strip()
+            if pred_text == lab_text:
+                canonical_predicted = slug
+                display_predicted = label
+                break
 
     preferred_slugs = []
     if customer and getattr(customer, 'preferred_categories', ''):
@@ -670,23 +690,29 @@ def recommendations(request):
             ordered_ids.append(sku)
 
     products_list = []
+    recommendation_source = None
     if ordered_ids:
         qs = Product.objects.filter(stock__gt=0, sku__in=ordered_ids)
         lookup = {prod.sku: prod for prod in qs}
         products_list = [lookup[sku] for sku in ordered_ids if sku in lookup]
+        if products_list:
+            recommendation_source = 'association_rules'
 
     ml_based = bool(ordered_ids)
 
+    # Prioritize ML predicted category for cold-starts: try the model's prediction first,
+    # then fall back to explicit profile preferences.
     fallback_sources = []
+    if canonical_predicted:
+        fallback_sources.append(canonical_predicted)
     for slug in preferred_slugs:
         if slug and slug not in fallback_sources:
             fallback_sources.append(slug)
-    if canonical_predicted and canonical_predicted not in fallback_sources:
-        fallback_sources.append(canonical_predicted)
 
     if not products_list and manual_products:
         products_list = manual_products
         ml_based = False
+        recommendation_source = 'manual'
 
     if not products_list:
         for slug in fallback_sources:
@@ -700,13 +726,44 @@ def recommendations(request):
             if fallback_qs:
                 products_list = list(fallback_qs)
                 display_predicted = display_category_name(resolved_slug)
+                # Determine which fallback source produced these results
+                if slug in preferred_slugs:
+                    recommendation_source = 'profile'
+                elif canonical_predicted and slug == canonical_predicted:
+                    recommendation_source = 'ml_predicted'
+                else:
+                    recommendation_source = 'fallback'
                 break
+
+    # Align displayed predicted category with the chosen recommendations to avoid mismatches
+    try:
+        if recommendation_source == 'association_rules' and products_list:
+            # derive display category from the first recommended product
+            display_predicted = display_category_name(getattr(products_list[0], 'category', None))
+        elif recommendation_source == 'manual' and products_list:
+            # manual recommendations may be product-specific; derive category from first product
+            display_predicted = display_category_name(getattr(products_list[0], 'category', None))
+    except Exception:
+        # keep existing display_predicted in case of error
+        pass
+
+    # Log which source we used for recommendations
+    logger = logging.getLogger(__name__)
+    logger.info("Recommendations source for user %s: %s (predicted=%s)", getattr(request.user, 'id', None), recommendation_source, canonical_predicted)
+    # Also print to stdout so it's visible in the terminal when running the dev server
+    try:
+        user_id = getattr(request.user, 'id', None)
+        product_skus = [getattr(p, 'sku', None) for p in products_list]
+        print(f"[recommendations] user={user_id} source={recommendation_source} predicted={canonical_predicted} products={product_skus}")
+    except Exception:
+        pass
 
     return render(request, 'storefront/recommendations.html', {
         'recommended_products': products_list,
         'recommendations': recs,
         'inferred_category': display_predicted,
-        'ml_based': ml_based
+        'ml_based': ml_based,
+        'recommendation_source': recommendation_source,
     })
 
 

@@ -2,11 +2,7 @@
 {% block title %}Recommended For You — AuroraMart{% endblock %}
 {% block content %}
 <h2>Recommended For You</h2>
-{% if inferred_category %}
-  <p class="muted">We think you might enjoy more from <strong>{{ inferred_category }}</strong>. Here are a few picks.</p>
-{% else %}
-  <p class="muted">Based on your browsing and purchase history.</p>
-{% endif %}
+<p class="muted">We think you might enjoy more of these products. Here are a few picks.</p>
 
 <div class="grid section">
   {% for product in recommended_products %}
