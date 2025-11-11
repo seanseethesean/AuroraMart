@@ -13,6 +13,11 @@ from adminpanel.models import Product, Customer, PRODUCT_CATEGORY_CHOICES
 from .models import CartItem, Order, OrderItem, Recommendation, BasketHistory
 from django.contrib.auth import login as auth_login
 from .forms import OnboardingForm, ProfileUpdateForm, RegistrationForm
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+import json
+import stripe
 
 
 EXTRA_CATEGORY_ALIASES = {
@@ -512,8 +517,39 @@ def checkout(request):
     return render(request, 'storefront/checkout.html', {
         'cart_items': cart_items,
         'total_price': total_price,
+        'total_cents': int(total_price * 100),
+        'stripe_publishable_key': getattr(settings, 'STRIPE_PUBLISHABLE_KEY', ''),
         'complete_the_set': complete_set,
     })
+
+
+@csrf_exempt
+@require_POST
+def create_payment_intent(request):
+    """Create a minimal Stripe PaymentIntent and return client_secret.
+    Expects JSON body: {"amount": <cents>}.
+    Requires STRIPE_SECRET_KEY to be set in settings (or will return error).
+    """
+    secret = getattr(settings, 'STRIPE_SECRET_KEY', None)
+    if not secret:
+        return JsonResponse({'error': 'Stripe secret key not configured.'}, status=400)
+    stripe.api_key = secret
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except Exception:
+        payload = {}
+    amount = int(payload.get('amount') or 0)
+    if amount <= 0:
+        return JsonResponse({'error': 'Invalid amount'}, status=400)
+    try:
+        intent = stripe.PaymentIntent.create(
+            amount=amount,
+            currency='usd',
+            automatic_payment_methods={'enabled': True},
+        )
+        return JsonResponse({'clientSecret': intent.client_secret})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 # -----------------------------
 # ORDER CONFIRMATION

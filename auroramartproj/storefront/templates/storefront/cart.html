@@ -3,6 +3,7 @@
 {% block content %}
 <h2>Your Cart</h2>
 {% if cart_items %}
+  <div class="page">
   <div class="section">
     {% for item in cart_items %}
       <div class="card" style="text-align:left; display:flex; align-items:center; gap:12px;">
@@ -20,7 +21,7 @@
             </form>
             <form method="post" action="{% url 'storefront:cart_update' item.product.id %}">
               {% csrf_token %}
-              <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" class="quantity-input" style="width:64px; text-align:center; padding:6px; border-radius:6px; border:1px solid #e6eaf2;" onchange="this.form.submit()">
+              <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" class="cart-qty" onchange="this.form.submit()">
               <noscript><button class="chip" type="submit">Update</button></noscript>
             </form>
             <form method="post" action="{% url 'storefront:cart_update' item.product.id %}">
@@ -28,8 +29,9 @@
               <input type="hidden" name="action" value="increment">
               <button class="chip" type="submit">+</button>
             </form>
-            <div style="margin-left:auto; text-align:right">
-                <div style="margin-bottom:6px;">
+            <div class="cart-controls" style="margin-left:auto; display:flex; align-items:center; gap:12px;">
+              <div class="cart-meta-amounts" style="text-align:right;">
+                <div class="cart-meta-unit" style="margin-bottom:6px;">
                   {% if item.product.discount_percent %}
                     <div><small class="original-price">${{ item.product.price }}</small></div>
                     <div><strong>Unit:</strong> <span class="discounted-price">${{ item.unit_price }}</span></div>
@@ -37,14 +39,16 @@
                     <div><strong>Unit:</strong> ${{ item.product.price }}</div>
                   {% endif %}
                 </div>
-                <div>Subtotal: ${{ item.subtotal }}</div>
+                <div class="cart-meta-subtotal" style="font-weight:700;">Subtotal: ${{ item.subtotal }}</div>
                 {% if item.total_savings and item.total_savings > 0 %}
-                  <div class="muted" style="color:#047857;">You saved ${{ item.total_savings }}</div>
+                  <div class="muted" style="color:#047857; margin-top:6px;">You saved ${{ item.total_savings }}</div>
                 {% endif %}
+              </div>
               <form method="post" action="{% url 'storefront:cart_remove' item.product.id %}">
                 {% csrf_token %}
-                <button class="chip" type="submit">Remove</button>
+                <button class="btn-remove" type="submit" aria-label="Remove {{ item.product.name }} from cart">Remove</button>
               </form>
+            </div>
             </div>
           </div>
         </div>
@@ -52,8 +56,11 @@
     {% endfor %}
   </div>
   <div class="section">
-    <p><strong>Total: </strong>${{ total }}</p>
-    <a class="chip primary" href="{% url 'storefront:checkout' %}">Proceed to Checkout</a>
+    <div class="cart-totals-row" style="display:flex; align-items:center; justify-content:space-between; max-width:960px; margin:0 auto;">
+      <div class="cart-total"><strong>Total: </strong>${{ total }}</div>
+      <div><a class="chip primary" href="{% url 'storefront:checkout' %}">Proceed to Checkout</a></div>
+    </div>
+  </div>
   </div>
   {% if complete_the_set %}
   <div class="section">

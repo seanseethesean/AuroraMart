@@ -120,6 +120,35 @@
   appearance: textfield !important;
 }
 
+/* Cart quantity prominence and compact controls */
+.cart-controls { display:inline-flex; gap:.5rem; align-items:center; }
+.cart-qty {
+  width:72px;
+  text-align:center;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid #e6eaf2;
+  font-weight:700;
+  font-size:1rem;
+  box-shadow: 0 4px 10px rgba(2,6,23,0.04);
+}
+.btn-remove {
+  background:#ef4444; /* red */
+  color:#fff;
+  border:none;
+  padding:6px 10px;
+  border-radius:8px;
+  font-weight:700;
+  font-size:0.9rem;
+  box-shadow: 0 6px 14px rgba(239,68,68,0.08);
+  cursor:pointer;
+}
+.btn-remove:hover { background:#dc2626; }
+
+/* Cart totals row styling */
+.cart-totals-row .cart-total { font-size:1.15rem; }
+.cart-meta-amounts .cart-meta-subtotal { font-size:1rem; }
+
 .quantity-input::-webkit-inner-spin-button,
 .quantity-input::-webkit-outer-spin-button {
   -webkit-appearance: none !important;
